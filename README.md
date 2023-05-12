@@ -27,8 +27,8 @@ There are two ways to use **DRrank**.
 First, One can supply a parameter $\lambda \in [0,1]$, which corresponds to the user's value of correctly ranking pairs of units relative to the costs of misclassifying them. $\lambda=1$ implies correct and incorrect rankings are valued equally, while $\lambda=0$ implies correct rankings are not valued at all. In pairwise comparisons between units, it is optimal to assign unit $i$ a higher grade than unit $j$ when $P_{ij} > 1/(1+\lambda)$, which implies $\lambda$ also corresponds to the minimum level of posterior certainty required to rank units pairwise.
 
 ```python
-from drrank.drrank import fit
-from drrank.simul import simul_data
+from drrank import fit
+from simul_pij import simul_data
 
 # Simulate data
 p_ij = simul_data(size = 25)
@@ -40,7 +40,7 @@ results = fit(p_ij, lamb = 0.25, DP = None, save_controls=True)
 We also provide a function to test a variety of different values of $\lambda$:
 
 ```python
-from drrank.drrank import fit_tuning
+from drrank import fit_tuning
 
 # looping over lambda
 lamdas = np.append(np.arange(0, 0.9, 0.01), [1.0])
