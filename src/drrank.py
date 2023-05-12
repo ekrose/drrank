@@ -1,0 +1,355 @@
+##########################################################
+#### Report card estiamtes functions                  ####
+##########################################################
+import pandas as pd
+import numpy as np
+import os
+import gurobipy as gp
+from gurobipy import GRB
+from scipy.sparse.csgraph import connected_components
+import multiprocessing
+from multiprocessing.pool import ThreadPool
+
+from loss_func import dp, tau
+
+## function to clean the Pij matrix ##
+def clean_data(pi):
+    """
+    Function to prepare the P_ij data to be fitted with the report card model
+    p_ij: a numpy matrix of (n_obs,n_obs) dimension containing the posterior estimates of the probabilities
+          P_ij of observation i being more biased than observation j - P_ij = Pr(Theta_i > Theta_j | Y_i, Y_j)
+    """
+    # Create a copy to not modify data in place
+    p_ij = pi.copy()
+
+    # Requires np.array as inputs
+    if type(p_ij) is not np.ndarray:
+        raise ValueError("Pi matrix must be numpy array.")
+
+    # Fill the diagonal with 0, so no gain / cost to ranking i tied with i
+    np.fill_diagonal(p_ij, 0)
+
+    # Check if p_ij = 1-p_ij.T
+    if not np.allclose(p_ij + np.eye(p_ij.shape[0]), (1-p_ij).T):
+        print("Warrning: Pi matrix does not appear equal to (1 - Pi.T)")
+        print("Max deviation {:7.6f}".format(np.max(np.abs(p_ij +  np.eye(p_ij.shape[0]) -  (1-p_ij).T))))
+
+    # Get coordinate representation
+    N = p_ij.shape[0]
+    i = np.repeat(np.arange(N),N) + 1
+    j = np.tile(np.arange(N),N) + 1
+    v = np.ravel(p_ij)
+
+    # Make a dataframe out of the coordinate representation of the matrix
+    df_p_ij = pd.DataFrame({'i':i,'j':j,'P_ij':v})
+
+    # Get the matrix coordinates
+    df_p_ij['idx'] = list(zip(df_p_ij.i, df_p_ij.j))
+
+    # Make a dictionary with keys the matrix coordinates, values the P_ij
+    p_ij_dict = {x:v for x, v in zip(df_p_ij['idx'], df_p_ij['P_ij'])}
+
+    # Split a single dictionary into multiple dictionaries
+    i_j, Pij = gp.multidict(p_ij_dict)
+
+    return i_j, Pij
+
+## main function ##
+def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+    """
+    Compute the report cards via Gurobi optimization
+    Parameters:
+    i_j: Coordinates of the Pij
+    Pij: Posterior estimates of the probability of observation i being more biased than observation j
+    lamb:  Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them - either lamb or DP must be specified
+    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
+    save_controls: if True, saves the estimates for debugging purposes (default = False)
+    save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
+    save_name: if save_controls == True, name for the file in which the estimates will be saved (default = "_debug")
+    FeasibilityTol: Feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    IntFeasTol: Integer feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    OptimalityTol: Optimality Tollerance, Gurobi parameter (default = 1e-9)
+    """
+    # Check that lambda and DP are correctly specified
+    if (lamb is not None) & (DP is not None) :
+        raise AssertionError("Must supply either lambda or DP, but not both.")
+    if (lamb != None):
+        if (lamb > 1) or (lamb < 0):
+            raise AssertionError("Lambda must be within [0,1].")
+    if (DP != None):
+        if (DP > 1) or (DP < 0):
+            raise AssertionError("DP must be within [0,1].")
+
+    # the model
+    with gp.Env() as env, gp.Model(env=env) as model:
+        n_obs = max(i_j)[0] + 1
+
+        # Tolearances
+        model.Params.FeasibilityTol = FeasibilityTol
+        model.Params.IntFeasTol = IntFeasTol
+        model.Params.OptimalityTol = OptimalityTol
+        
+        # control variables
+        Dij = model.addVars(i_j, vtype=GRB.BINARY, name="Dij")
+        Eij = model.addVars(i_j, vtype=GRB.BINARY, name="Eij")
+
+        if lamb is not None:
+            loss = (1-lamb)*dp(i_j, Pij, Dij, Eij) - lamb*tau(i_j, Pij, Dij, Eij)
+        elif DP is not None:
+            loss = -tau(i_j, Pij, Dij, Eij)
+        else:
+            raise AssertionError("Must supply either lambda or DP.")
+
+        model.setObjective(loss, GRB.MINIMIZE)
+
+        # Add constraints to force transitivity
+        model.addConstrs(
+            (Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
+             range(1, n_obs)
+             if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            name="SST1")
+        model.update()
+
+        model.addConstrs(
+            (Dij[(i, k)] + (1 - Dij[(j, k)]) - Dij[(i, j)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
+             range(1, n_obs) if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            name="SST2")
+        model.update()
+
+        model.addConstrs(
+            (Eij[(i, j)] + Eij[(j, k)] - Eij[(i, k)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
+             range(1, n_obs)
+             if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            name="SST3")
+        model.update()
+
+        model.addConstrs((Eij[(i,j)] + Dij[(i,j)] + Dij[(j,i)] == 1 for j in range(1, n_obs) for i in range(1, n_obs)),
+                         name="logic1")
+        model.update()
+        model.addConstrs((Eij[(i, i)] == 1 for i in range(1, n_obs)),
+                         name="logic2")
+        model.update()
+
+        # DP constraint, if necessary
+        if DP is not None:
+            npairs = np.sum(Pij.values())
+            model.addConstr(dp(i_j, Pij, Dij, Eij) <= DP*npairs)
+        model.update()
+
+        # First optimize() if call fails - need to set NonConvex to 2
+        try:
+            print("Optimizing model...")
+            model.optimize()
+        except gp.GurobiError:
+            print("...ptimize failed due to non-convexity")
+            print("...optimizing with non-convexity")
+            # Solve bilinear model
+            model.Params.NonConvex = 2
+            model.optimize()
+        print("...optimized model successfully")
+
+        ## print results
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+        if lamb is not None:
+            print('lambda: %g' % lamb)
+        elif DP is not None:
+            print('DP: %g' % DP)
+        print('Obj: %g' % model.ObjVal)
+        print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+        ## get results
+        D_ij_hat = model.getAttr('x', Dij)
+        E_ij_ij_hat = model.getAttr('x', Eij)
+
+        data_items = D_ij_hat.items()
+        data_list = list(data_items)
+        df = pd.DataFrame(data_list, columns=['i_j', 'D_ij'])
+
+        data_items = E_ij_ij_hat.items()
+        data_list = list(data_items)
+        df2 = pd.DataFrame(data_list, columns=['i_j', 'E_ij'])
+
+        df = df.merge(df2, on='i_j', how='outer', validate="1:1", indicator=True)
+        df.drop(columns=['_merge'], inplace=True)
+
+        ## check violations
+        df['D_ij'] = df['D_ij'].round(2)
+        df['E_ij'] = df['E_ij'].round(2)
+        df['sum'] = df['D_ij'] + df['E_ij']
+
+        if df['sum'].max()>1.000000000002:
+            raise AssertionError("Violation of transitivity constraints")
+
+        df['D_ji'] = ((df['D_ij'] == 0) & (df['E_ij'] == 0)).astype(int)
+        df['lambda'] = lamb
+
+        df[['i', 'j']] = pd.DataFrame(df2['i_j'].tolist(), index=df.index)
+
+        # For debugging save for later
+        if save_controls==True:
+            if save_dir == "dump":
+                # Create a folder if the user has not specified any directory
+                os.makedirs("dump/", exist_ok=True)
+            print("Saving estimates in {}/df_aux_{}_{}.csv for debugging purposes".format(save_dir,lamb, save_name))
+            df.to_csv("{}/df_aux_{}_{}.csv".format(save_dir,lamb, save_name), index = False)
+
+        ## get the implied groups!
+        print("Getting the implied groups...")
+        df_groups = get_groups(df)
+        print("Finished!")
+        df_groups.rename(columns={'groups': 'groups_lambda_{}'.format(lamb)}, inplace=True)
+
+        return df_groups
+    
+
+## Function to get groups from ranking output 
+def get_groups(df):
+    """
+    From the estimated ranks from the function "report_cards", get the observation groups
+    df: dataframe with the Gurobi estimates
+    Return observation groups
+    """
+
+    ## get groups
+    df_aux = df[df['E_ij'] == 1]
+
+    # generate adjacency matrix
+    sim_mat = pd.crosstab(df_aux.i, df_aux.j)
+
+    sim_mat2 = sim_mat.to_numpy()
+    n_components, labels = connected_components(sim_mat2, directed=False)
+
+    # mapping from observations to groups
+    obs_groups = pd.DataFrame({"obs_idx": sim_mat.keys(),
+                                "groups": labels})
+
+    # test for violation of transitivity
+    print(">> Test for violation of transitivity")
+    if len(labels)==1:
+        assert len(df)==len(df_aux)
+    else:
+        for l in np.unique(labels):
+            f_in_gr = obs_groups["obs_idx"][obs_groups['groups'] == l].to_numpy()
+            df_l = df[(df['i'].isin(f_in_gr)) & (df['j'].isin(f_in_gr))]
+
+            #print(len(df_l))
+            assert len(df_l) == len(df_l[df_l['E_ij']==1])
+
+    print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+    print("Number of groups: {}".format(len(np.unique(labels))), flush=True)
+    print("%%%%%%%%%%%%%%%%%%%%%%%%%")
+
+    ## bubble sort
+    sorted_labels = np.unique(labels)
+
+    swapped = True
+    while swapped:
+        swapped = False
+        for i in range(len(sorted_labels) - 1):
+            i_lab = sorted_labels[i]
+            i_1_lab = sorted_labels[i + 1]
+
+            # who is bigger?
+            f_in_gr = obs_groups["obs_idx"][obs_groups['groups'] == i_lab].to_numpy()
+            f_in_gr_1 = obs_groups["obs_idx"][obs_groups['groups'] == i_1_lab].to_numpy()
+
+            df_aux = df[(df['j'].isin(f_in_gr)) & (df['i'].isin(f_in_gr_1))]
+            dij = df_aux['D_ij'].max()
+            dji = df_aux['D_ji'].max()
+
+            if len(df_aux) == 0:
+                df_aux = df[(df['i'].isin(f_in_gr)) & (df['j'].isin(f_in_gr_1))]
+                dij = df_aux['D_ij'].max()
+                dji = df_aux['D_ji'].max()
+
+                condition = dij < dji
+                # check we don't have violation of transitivity
+                if dij == dji:
+                    raise AssertionError("Violation of transitivity")
+            else:
+                condition = dji < dij
+                # check we don't have violation of transitivity
+                if dij == dji:
+                    raise AssertionError("Violation of transitivity")
+
+            if condition:
+                sorted_labels[i], sorted_labels[i + 1] = sorted_labels[i + 1], sorted_labels[i]
+                swapped = True
+
+    print(">> Finished bubble sort!")
+    new_vals = {sorted_labels[i]: i for i in range(len(sorted_labels))}
+    obs_groups['groups'] = obs_groups['groups'].replace(new_vals)
+
+    return obs_groups
+
+
+## function to fit the ranking model ##
+def fit(Pij, lamb, DP, save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+    """
+    Function to fit the report card model on a Pij matrix of posterior estimates of bias
+    Parameters:
+    i_j: Coordinates of the Pij
+    Pij: Posterior estimates of the probability of observation i being more biased than observation j
+    lamb:  Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them
+    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
+    save_controls: if True, saves the estimates for debugging purposes (default = False)
+    save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
+    save_name: if save_controls == True, name for the file in which the estimates will be saved (default = "_debug")
+    FeasibilityTol: Feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    IntFeasTol: Integer feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    OptimalityTol: Optimality Tollerance, Gurobi parameter (default = 1e-9)
+    """    
+    # Clean the Pij and retrieve the sparse representation
+    i_j, Pij = clean_data(Pij)
+
+    # Produce the report cards
+    res_df = report_cards(i_j, Pij, lamb, DP, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+
+    return res_df
+
+## function to get different ranking estimations based on a list of lambdas ##
+def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+    """
+    Function to fit the report card model on a Pij matrix of posterior estimates of bias
+    -> gives back a dataframe with results for various lambda parameters
+    Parameters:
+    i_j: Coordinates of the Pij
+    Pij: Posterior estimates of the probability of observation i being more biased than observation j
+    lamb_list:  List of lambdas to be used (lambda: Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them)
+    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
+    ncores: Number of cores, if set to -1 uses all the cores available (default = 1)
+    save_controls: if True, saves the estimates for debugging purposes (default = False)
+    save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
+    save_name: if save_controls == True, name for the file in which the estimates will be saved (default = "_debug")
+    FeasibilityTol: Feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    IntFeasTol: Integer feasibility Tollerance, Gurobi parameter (default = 1e-9)
+    OptimalityTol: Optimality Tollerance, Gurobi parameter (default = 1e-9)
+    """
+    # If ncores is -1, use all CPUs
+    if ncores == -1:
+        ncores = multiprocessing.cpu_count() 
+
+    # Clean the Pij and retrieve the sparse representation
+    i_j, Pij = clean_data(Pij)
+
+    # final dataframe to store all results
+    n_obs = max(i_j)[0] + 1
+    final_df = pd.DataFrame({'obs_idx': range(1, n_obs)})
+
+    def report_cards_helper(x):
+        """
+        Helper function to run report_cards within a multiprocessing tool
+        x: lambda value over which we iterate
+        """
+        return report_cards(i_j, Pij, x, DP = None, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+
+
+    # Compute using multiprocessing to speed up everything
+    print("Computing grades with {} cores".format(ncores), flush=True)
+    with ThreadPool(ncores) as p:
+        dfs = p.map(report_cards_helper, lamb_list)
+    # Get the final result dataset
+    for d in dfs:
+        final_df = final_df.merge(d, on='obs_idx', validate="1:1")
+
+    return final_df

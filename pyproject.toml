@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "drrank"
+version = "0.0.1"
+authors = [
+  { name="Evan K. Rose", email="ekrose@gmail.com" },
+]
+description = "Implement the Empirical Bayes ranking scheme developed in Kline, Rose, and Walters (2023)"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "numpy",
+  "pandas >= 1.0",
+  "os",
+  "scipy == 1.10.1",
+  "gurobipy == 10.0.1"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ekrose/drrank"
+"Bug Tracker" = "https://github.com/ekrose/drrank/issues"
