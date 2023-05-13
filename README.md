@@ -42,11 +42,14 @@ We also provide a function to test a variety of different values of $\lambda$:
 ```python
 from drrank import fit_multiple
 
+# looping over lambda
+lamdas = np.append(np.arange(0, 0.9, 0.01), [1.0])
+
 # Try different values of Lambda
 results_l = fit_multiple(p_ij, np.arange(0, 0.9, 0.01))
 ```
 
-Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s $\tau$, a measure of the rank correlation between units' latent rankings and assigned grades, subject to a constraint on the expected share of pairwise units incorrectly misclassified, which we refer to as the discordance proportion.
+Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s $\tau$, a measure of the rank correlation between units' latent rankings and assigned grades, subject to a constraint on the expected share of pairwise units incorrectly classified, which we refer to as the discordance proportion.
 
 ```python
 
