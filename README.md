@@ -37,6 +37,16 @@ p_ij = simul_data(size = 25)
 results = fit(p_ij, lamb = 0.25, DR = None, save_controls=True)
 ```
 
+See below an example of the resulting data:
+
+|   obs_idx |   grades_lamb0.25 |   condorcet_rank |
+|----------:|------------------:|-----------------:|
+|         1 |                 0 |                8 |
+|         2 |                 0 |                7 |
+|         3 |                 0 |                0 |
+|         4 |                 0 |                1 |
+|         5 |                 0 |               10 |
+
 We also provide a function to test a variety of different values of $\lambda$:
 
 ```python
@@ -58,6 +68,3 @@ results = fit(p_ij, lamb = None, DR = 0.05, save_controls=True)
 ```
 
 The results report the assigned grade for each unit along with its Condorcet rank (grades under $\lambda = 1$) along with the row index of $P$.
-
-
-
