@@ -19,12 +19,12 @@ To compute rankings, provide the **fit** function with a matrix $P$ of posterior
 
 $P_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
 
-**DRrank** expects these probabilities to satisfy $P_ij = 1-P_ji$. 
+**DRrank** expects these probabilities to satisfy $P_{ij} = 1-P_{ji}$. 
 
 
 There are two ways to use **DRrank**.
 
-First, One can supply a parameter $\lambda \in [0,1]$, which corresponds to the user's value of correctly ranking pairs of units relative to the costs of misclassifying them. $\lambda=1$ implies correct and incorrect rankings are valued equally, while $\lambda=0$ implies correct rankings are not valued at all. In pairwise comparisons between units, it is optimal to assign unit $i$ a higher grade than unit $j$ when $P_{ij} > 1/(1+\lambda)$, which implies $\lambda$ also corresponds to the minimum level of posterior certainty required to rank units pairwise.
+First, one can supply a parameter $\lambda \in [0,1]$, which corresponds to the user's value of correctly ranking pairs of units relative to the costs of misclassifying them. $\lambda=1$ implies correct and incorrect rankings are valued equally, while $\lambda=0$ implies correct rankings are not valued at all. In pairwise comparisons between units, it is optimal to assign unit $i$ a higher grade than unit $j$ when $P_{ij} > 1/(1+\lambda)$, which implies $\lambda$ also determines the minimum level of posterior certainty required to rank units pairwise.
 
 ```python
 from drrank import fit
@@ -37,7 +37,7 @@ p_ij = simul_data(size = 25)
 results = fit(p_ij, lamb = 0.25, DR = None, save_controls=True)
 ```
 
-See below an example of the resulting data:
+The results ojbect contains the row index of $P$, the assigned grades, and the Condorcet rank (i.e., grade under $\lambda=1$). 
 
 |   obs_idx |   grades_lamb0.25 |   condorcet_rank |
 |----------:|------------------:|-----------------:|
@@ -47,13 +47,10 @@ See below an example of the resulting data:
 |         4 |                 0 |                1 |
 |         5 |                 0 |               10 |
 
-We also provide a function to test a variety of different values of $\lambda$:
+We also provide functionality to compute results for a list of values $\lambda$ in parallel:
 
 ```python
 from drrank import fit_multiple
-
-# looping over lambda
-lamdas = np.append(np.arange(0, 0.9, 0.01), [1.0])
 
 # Try different values of Lambda
 results_l = fit_multiple(p_ij, np.arange(0, 0.9, 0.01))
@@ -66,5 +63,3 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 # Fit the report card function
 results = fit(p_ij, lamb = None, DR = 0.05, save_controls=True)
 ```
-
-The results report the assigned grade for each unit along with its Condorcet rank (grades under $\lambda = 1$) along with the row index of $P$.
