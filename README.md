@@ -34,7 +34,7 @@ from simul_pij import simul_data
 p_ij = simul_data(size = 25)
 
 # Fit the report card function
-results = fit(p_ij, lamb = 0.25, DR = None, save_controls=True)
+results = fit(p_ij, lamb = 0.25, DR = None)
 ```
 
 The results ojbect contains the row index of $P$, the assigned grades, and the Condorcet rank (i.e., grade under $\lambda=1$). 
@@ -61,5 +61,5 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 ```python
 
 # Fit the report card function
-results = fit(p_ij, lamb = None, DR = 0.05, save_controls=True)
+results = fit(p_ij, lamb = None, DR = 0.05)
 ```
