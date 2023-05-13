@@ -55,14 +55,14 @@ def clean_data(pi):
     return i_j, Pij
 
 ## main function ##
-def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
     """
     Compute the report cards via Gurobi optimization
     Parameters:
     i_j: Coordinates of the Pij
     Pij: Posterior estimates of the probability of observation i being more biased than observation j
-    lamb:  Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them - either lamb or DP must be specified
-    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
+    lamb:  Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them - either lamb or DR must be specified
+    DR: Discordance rate (i.e. shares of observation pairs misranked according to their grades) - either lamb or DR must be specified
     save_controls: if True, saves the estimates for debugging purposes (default = False)
     save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
     save_name: if save_controls == True, name for the file in which the estimates will be saved (default = "_debug")
@@ -70,15 +70,15 @@ def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_control
     IntFeasTol: Integer feasibility Tollerance, Gurobi parameter (default = 1e-9)
     OptimalityTol: Optimality Tollerance, Gurobi parameter (default = 1e-9)
     """
-    # Check that lambda and DP are correctly specified
-    if (lamb is not None) & (DP is not None) :
-        raise AssertionError("Must supply either lambda or DP, but not both.")
+    # Check that lambda and DR are correctly specified
+    if (lamb is not None) & (DR is not None) :
+        raise AssertionError("Must supply either lambda or DR, but not both.")
     if (lamb != None):
         if (lamb > 1) or (lamb < 0):
             raise AssertionError("Lambda must be within [0,1].")
-    if (DP != None):
-        if (DP > 1) or (DP < 0):
-            raise AssertionError("DP must be within [0,1].")
+    if (DR != None):
+        if (DR > 1) or (DR < 0):
+            raise AssertionError("DR must be within [0,1].")
 
     # the model
     with gp.Env() as env, gp.Model(env=env) as model:
@@ -95,10 +95,10 @@ def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_control
 
         if lamb is not None:
             loss = (1-lamb)*dp(i_j, Pij, Dij, Eij) - lamb*tau(i_j, Pij, Dij, Eij)
-        elif DP is not None:
+        elif DR is not None:
             loss = -tau(i_j, Pij, Dij, Eij)
         else:
-            raise AssertionError("Must supply either lambda or DP.")
+            raise AssertionError("Must supply either lambda or DR.")
 
         model.setObjective(loss, GRB.MINIMIZE)
 
@@ -130,10 +130,10 @@ def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_control
                          name="logic2")
         model.update()
 
-        # DP constraint, if necessary
-        if DP is not None:
+        # DR constraint, if necessary
+        if DR is not None:
             npairs = np.sum(Pij.values())
-            model.addConstr(dp(i_j, Pij, Dij, Eij) <= DP*npairs)
+            model.addConstr(dp(i_j, Pij, Dij, Eij) <= DR*npairs)
         model.update()
 
         # First optimize() if call fails - need to set NonConvex to 2
@@ -152,8 +152,8 @@ def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_control
         print("%%%%%%%%%%%%%%%%%%%%%%%%%")
         if lamb is not None:
             print('lambda: %g' % lamb)
-        elif DP is not None:
-            print('DP: %g' % DP)
+        elif DR is not None:
+            print('DR: %g' % DR)
         print('Obj: %g' % model.ObjVal)
         print("%%%%%%%%%%%%%%%%%%%%%%%%%")
 
@@ -196,8 +196,10 @@ def report_cards(i_j, Pij, lamb = None, DP = None, loss = 'binary', save_control
         ## get the implied groups!
         print("Getting the implied groups...")
         df_groups = get_groups(df)
-        print("Finished!")
-        df_groups.rename(columns={'groups': 'groups_lambda_{}'.format(lamb)}, inplace=True)
+        if lamb is not None:
+            df_groups.rename(columns={'groups': 'grades_lamb{}'.format(lamb)}, inplace=True)
+        elif DR is not None:
+            df_groups.rename(columns={'groups': 'grades_DR{}'.format(DR)}, inplace=True)
 
         return df_groups
     
@@ -284,14 +286,14 @@ def get_groups(df):
 
 
 ## function to fit the ranking model ##
-def fit(Pij, lamb, DP, save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+def fit(Pij, lamb, DR = None, save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
     """
     Function to fit the report card model on a Pij matrix of posterior estimates of bias
     Parameters:
     i_j: Coordinates of the Pij
     Pij: Posterior estimates of the probability of observation i being more biased than observation j
     lamb:  Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them
-    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
+    DR: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DR must be specified
     save_controls: if True, saves the estimates for debugging purposes (default = False)
     save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
     save_name: if save_controls == True, name for the file in which the estimates will be saved (default = "_debug")
@@ -303,7 +305,11 @@ def fit(Pij, lamb, DP, save_controls = False, save_dir = "dump", save_name = '_d
     i_j, Pij = clean_data(Pij)
 
     # Produce the report cards
-    res_df = report_cards(i_j, Pij, lamb, DP, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+    res_df = report_cards(i_j, Pij, lamb, DR, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+
+    # Compute condorcet ranks
+    condorcet = report_cards(i_j, Pij, 1, None, save_controls = False, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+    res_df['condorcet_rank'] = condorcet['grades_lamb1']
 
     return res_df
 
@@ -316,7 +322,6 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
     i_j: Coordinates of the Pij
     Pij: Posterior estimates of the probability of observation i being more biased than observation j
     lamb_list:  List of lambdas to be used (lambda: Tuning parameter trading off the gains of correctly ranking pairs of observations against the cost of misclassifying them)
-    DP: Discordance proportion (i.e. shares of observation pairs misranked according to their grades) - either lamb or DP must be specified
     ncores: Number of cores, if set to -1 uses all the cores available (default = 1)
     save_controls: if True, saves the estimates for debugging purposes (default = False)
     save_dir: if save_controls == True, name for the directory in which the estimates will be saved, if the default directory is used, it creates a folder named "dump" (default = "dump")
@@ -341,13 +346,13 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
         Helper function to run report_cards within a multiprocessing tool
         x: lambda value over which we iterate
         """
-        return report_cards(i_j, Pij, x, DP = None, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
-
+        return report_cards(i_j, Pij, x, DR = None, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
 
     # Compute using multiprocessing to speed up everything
     print("Computing grades with {} cores".format(ncores), flush=True)
     with ThreadPool(ncores) as p:
         dfs = p.map(report_cards_helper, lamb_list)
+
     # Get the final result dataset
     for d in dfs:
         final_df = final_df.merge(d, on='obs_idx', validate="1:1")

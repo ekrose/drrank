@@ -34,19 +34,16 @@ from simul_pij import simul_data
 p_ij = simul_data(size = 25)
 
 # Fit the report card function
-results = fit(p_ij, lamb = 0.25, DP = None, save_controls=True)
+results = fit(p_ij, lamb = 0.25, DR = None, save_controls=True)
 ```
 
 We also provide a function to test a variety of different values of $\lambda$:
 
 ```python
-from drrank import fit_tuning
-
-# looping over lambda
-lamdas = np.append(np.arange(0, 0.9, 0.01), [1.0])
+from drrank import fit_multiple
 
 # Try different values of Lambda
-results_l = fit_multiple(p_ij, list(lamdas), DP = None)
+results_l = fit_multiple(p_ij, np.arange(0, 0.9, 0.01))
 ```
 
 Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s $\tau$, a measure of the rank correlation between units' latent rankings and assigned grades, subject to a constraint on the expected share of pairwise units incorrectly misclassified, which we refer to as the discordance proportion.
@@ -54,6 +51,10 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 ```python
 
 # Fit the report card function
-results = fit(p_ij, lamb = None, DP = 0.05, save_controls=True)
+results = fit(p_ij, lamb = None, DR = 0.05, save_controls=True)
 ```
+
+The results report the assigned grade for each unit along with its Condorcet rank (grades under $\lambda = 1$) along with the row index of $P$.
+
+
 
