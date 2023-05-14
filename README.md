@@ -50,6 +50,7 @@ The results ojbect contains the row index of $P$, the assigned grades, and the C
 We also provide functionality to compute results for a list of values $\lambda$ in parallel:
 
 ```python
+import numpy as np
 from drrank import fit_multiple
 
 # Try different values of Lambda
