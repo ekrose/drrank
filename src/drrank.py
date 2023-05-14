@@ -10,7 +10,7 @@ from scipy.sparse.csgraph import connected_components
 import multiprocessing
 from multiprocessing.pool import ThreadPool
 
-from loss_func import dp, tau
+from drrank_loss import dp, tau
 
 ## function to clean the Pij matrix ##
 def clean_data(pi):
