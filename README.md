@@ -4,7 +4,7 @@ DRrank is a Python library to implement the Empirical Bayes ranking scheme devel
 
 ## Installation:
 
-The package uses the Gurobi optimizer. To use **DRrank** you must first install Gurobi and acquire a license. More guidance is available from Guorbi [here](https://www.gurobi.com/documentation/9.5/quickstart_windows/cs_python_installation_opt.html)). Gurobi offers a variety of free licenses for academic use. For more information, see the following [page](https://www.gurobi.com/academia/academic-program-and-licenses/).
+The package uses the Gurobi optimizer. To use **DRrank** you must first install Gurobi and acquire a license. More guidance is available from Gurobi [here](https://www.gurobi.com/documentation/9.5/quickstart_windows/cs_python_installation_opt.html)). Gurobi offers a variety of free licenses for academic use. For more information, see the following [page](https://www.gurobi.com/academia/academic-program-and-licenses/).
 
 
 After having successfully set up Gurobipy, install  **DRrank** via pip:
@@ -41,11 +41,11 @@ The results ojbect contains the row index of $P$, the assigned grades, and the C
 
 |   obs_idx |   grades_lamb0.25 |   condorcet_rank |
 |----------:|------------------:|-----------------:|
-|         1 |                 0 |                8 |
-|         2 |                 0 |                7 |
-|         3 |                 0 |                0 |
-|         4 |                 0 |                1 |
-|         5 |                 0 |               10 |
+|         1 |                 1 |                5 |
+|         2 |                 1 |                2 |
+|         3 |                 1 |               13 |
+|         4 |                 1 |                4 |
+|         5 |                 1 |                9 |
 
 We also provide functionality to compute results for a list of values $\lambda$ in parallel:
 
