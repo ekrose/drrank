@@ -280,7 +280,7 @@ def get_groups(df):
 
     print(">> Finished bubble sort!")
     new_vals = {sorted_labels[i]: i for i in range(len(sorted_labels))}
-    obs_groups['groups'] = obs_groups['groups'].replace(new_vals)
+    obs_groups['groups'] = obs_groups['groups'].replace(new_vals) + 1
 
     return obs_groups
 
