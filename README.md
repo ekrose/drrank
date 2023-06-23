@@ -1,6 +1,6 @@
 # DRrank
 
-DRrank is a Python library to implement the Empirical Bayes ranking scheme developed in Kline, Rose, and Walters (2023).
+DRrank is a Python library to implement the Empirical Bayes ranking scheme developed in [Kline, Rose, and Walters (2023)](https://arxiv.org/abs/2306.13005).
 
 ## Installation:
 
