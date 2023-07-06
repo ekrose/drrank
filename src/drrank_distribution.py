@@ -219,6 +219,7 @@ class prior_estimate():
             g_delta: if a different estimation of the prior has been used, supply it through g_delta, default is None, i.e. use the estimates from estimates_prior()
             ncores: how many CPUs for parallel processing, default is all CPUs available (ncores = -1)
             power: cardinal weights. Set to zero (default) for pairwise posterior ordering probabilities
+                Set to 1 for absolute error weighted loss. Set to 2 for square-weighted loss.
         
         Access the estimated pairwise components calling self.pis()
         """
