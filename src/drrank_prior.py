@@ -19,8 +19,6 @@ def minimgap(c, P, Q, alpha_0, options_fmin, supp_delta, sd_ests, mean_ests, vcv
 
     return gap
 
-
-
 def likelihood(alpha, P, Q, c, optimization = True):
     """
     Likelihood function to be maximized for the G estimation
@@ -42,8 +40,6 @@ def likelihood(alpha, P, Q, c, optimization = True):
         return logL
     else:
         return logL, dlogL, g
-
-
 
 def logsumexp(x, axis=None):
     # Compute log(sum(exp(x), axis)) while avoiding numerical underflow.
