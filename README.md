@@ -1,10 +1,10 @@
 # DRrank
 
-DRrank is a Python library to implement the Empirical Bayes ranking scheme developed in [Kline, Rose, and Walters (2023)](https://arxiv.org/abs/2306.13005).
+DRrank is a Python library to implement the Empirical Bayes ranking scheme developed in [Kline, Rose, and Walters (2023)](https://arxiv.org/abs/2306.13005). This code was originally developed by [Hadar Avivi](https://avivihadar.github.io/).
 
 ## Installation:
 
-The package uses the Gurobi optimizer. To use **DRrank** you must first install Gurobi and acquire a license. More guidance is available from Gurobi [here](https://www.gurobi.com/documentation/9.5/quickstart_windows/cs_python_installation_opt.html)). Gurobi offers a variety of free licenses for academic use. For more information, see the following [page](https://www.gurobi.com/academia/academic-program-and-licenses/).
+The package uses the Gurobi optimizer. To use **DRrank** you must first install Gurobi and acquire a license. More guidance is available from Gurobi [here](https://www.gurobi.com/documentation/9.5/quickstart_windows/cs_python_installation_opt.html). Gurobi offers a variety of free licenses for academic use. For more information, see the following [page](https://www.gurobi.com/academia/academic-program-and-licenses/).
 
 
 After having successfully set up Gurobipy, install  **DRrank** via pip:
@@ -53,7 +53,7 @@ In both functionalities, it is possible to provide your own prior distribution G
 
 ### 3. Estimate rankings
 
-To compute rankings, provide the **fit** function with a matrix $P$ of posterior estimates of the probability observation i's latent measure (e.g., bias, quality, etc.) exceeds unit j's. That is, each element of this matrix takes the form:
+To compute rankings, use the **fit** function with a matrix $P$ of posterior probabilities that observation i's latent measure $\theta_i$ (e.g., bias, quality, etc.) exceeds unit j's. That is, each element of this matrix takes the form:
 
 $\pi_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
 
@@ -85,7 +85,7 @@ The results ojbect contains the row index of $P$, the assigned grades, and the C
 |         4 |                 1 |                4 |
 |         5 |                 1 |                9 |
 
-We also provide functionality to compute results for a list of values $\lambda$ in parallel:
+We also provide functionality to compute results for a list of values of $\lambda$ in parallel:
 
 ```python
 import numpy as np
