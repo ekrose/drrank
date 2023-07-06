@@ -43,7 +43,7 @@ class prior_estimate():
         # Inverse of any transform used to variance stabilize estimates
         self.inv_transform = transform
 
-    def estimate_prior(self, supp_points = 5000, spline_order = 5, seed = None):
+    def estimate_prior(self, supp_points=5000, spline_order=5, seed=None):
         """
         Estimate the prior distribution G
         Arguments:
@@ -167,13 +167,13 @@ class prior_estimate():
         print(f"Prior mean: {mean_delta:4f}")
         print(f"Prior standard deviation: {sd_delta:4f}")
 
-        # Rescale g
+        # Rescale g to sum to one
         g_delta = g_delta / np.sum(g_delta)
 
         # Save the estimates
         self.prior_g = {'mean_delta': mean_delta, 'sd_delta': sd_delta, 'g_delta': g_delta}
 
-    def compute_posterior_distributions(self, g_delta = None):
+    def compute_posterior_distributions(self, g_delta=None):
         # Decide which prior density to use
         if g_delta == None:
             try:
@@ -181,7 +181,7 @@ class prior_estimate():
             except:
                 raise ValueError("Prior distribution was not estimated, cannot proceed to compute the posteriors")
         else:
-            print("Using user-supplied prior distribution G")
+            print("Using user-supplied prior distribution")
 
         # Compute posterior distribution for each estimate
         post_dist = ((1 / self.s) * norm.pdf((self.deltas - self.supp_delta[:,np.newaxis]) / self.s)) * g_delta[:,np.newaxis]
@@ -200,7 +200,7 @@ class prior_estimate():
         self.lci_trans = self.inv_transform(self.lci)
         self.uci_trans = self.inv_transform(self.uci)
     
-    def compute_posteriors(self, alpha=.05, g_delta = None):
+    def compute_posteriors(self, alpha=.05, g_delta=None):
 
         # Get posterior distributions
         self.compute_posterior_distributions(g_delta)
@@ -208,13 +208,19 @@ class prior_estimate():
         # Get posterior features
         self.posterior_features(alpha)
 
-    def compute_pis(self, g_delta = None, ncores = -1, power=0):
+    def compute_pis(self, g_delta=None, ncores=-1, power=0):
         """
-        Estimate the pairwise ordering probabilities
+        Estimate pairwise loss compoments. When power=0, these are
+        simply Prob(unit_i > unit_j | Y, G). When power > 0, these are
+        E[max(unit_i - unit_j,0)^power | Y, G], enabling extensions to loss
+        functions that weight ranking loss by the cardinal difference
+        between i and j to the power of zero.
         Arguments:
             g_delta: if a different estimation of the prior has been used, supply it through g_delta, default is None, i.e. use the estimates from estimates_prior()
             ncores: how many CPUs for parallel processing, default is all CPUs available (ncores = -1)
-        Access the estimated pairwise ordering probabilities calling self.pis()
+            power: cardinal weights. Set to zero (default) for pairwise posterior ordering probabilities
+        
+        Access the estimated pairwise components calling self.pis()
         """
         # Estimate posterior if necessary
         if self.post_dist is None:
