@@ -15,6 +15,45 @@ pip install drrank
 
 ## Usage
 
+### 1. Estimation of Prior
+
+Before proceeding with the estimation of the posterior probabilities, estimate the prior distribution $G$ by providing a set of estimates of the probability observation i's latent measure (e.g., bias, quality, etc.) exceeds unit j's, together with their standard errors.
+
+```
+from drrank_distribution import estimate_distribution
+# deltas: set of estimates
+# s: set of standard errors
+# Initialize the estimator object
+drrank_est = estimate_distribution(deltas, s)
+
+# Estimate the prior distribution G.
+drrank_est.estimate_prior()
+
+# Inspect the results
+drrank_est.prior_g()
+
+```
+
+### 2. Estimation of posterior features and pairwise probabilities
+
+Once the prior distribution $G$ has been estimated, it is possible to estimate the posterior features and the pairwise ordering probabilities $\pi_{ij}$.
+
+```
+# Compute the posterior features
+drrank_est.compute_posteriors()
+# Access the posterior features
+drrank_est.posterior_features()
+
+# Compute the pairwise ordering probabilities
+drrank_est.compute_pis()
+# Access the pis
+drrank_est.pis()
+```
+
+In both functionalities, it is possible to provide your own prior distribution G by feeding an array to the *g_delta* argument.
+
+### 3. Estimate rankings
+
 To compute rankings, provide the **fit** function with a matrix $P$ of posterior estimates of the probability observation i's latent measure (e.g., bias, quality, etc.) exceeds unit j's. That is, each element of this matrix takes the form:
 
 $\pi_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
