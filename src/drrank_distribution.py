@@ -189,7 +189,11 @@ class prior_estimate():
 
         self.post_dist = post_dist
 
-    def posterior_features(self, alpha=.05):
+    def posterior_features(self, g_delta, alpha=.05):
+        # Estimate posterior if necessary
+        if self.post_dist is None:
+            self.compute_posterior_distributions(g_delta)
+
         # Compute posterior features
         self.pmean = self.supp_delta.dot(self.post_dist)
         self.pmean_trans = self.inv_transform(self.supp_delta).dot(self.post_dist)
@@ -201,12 +205,11 @@ class prior_estimate():
         self.uci_trans = self.inv_transform(self.uci)
     
     def compute_posteriors(self, alpha=.05, g_delta=None):
-
         # Get posterior distributions
         self.compute_posterior_distributions(g_delta)
 
         # Get posterior features
-        self.posterior_features(alpha)
+        self.posterior_features(g_delta, alpha)
 
     def compute_pis(self, g_delta=None, ncores=-1, power=0):
         """
