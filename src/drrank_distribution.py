@@ -127,7 +127,7 @@ class estimate_distribution():
         supp_delta = supp_z
         rng = np.random.default_rng(seed=seed)
         alpha_0 = rng.standard_normal((self.spline_order, 1)) 
-        alpha_0 = rng.random((self.spline_order, 1)) 
+        # alpha_0 = rng.random((self.spline_order, 1)) 
 
         # Setup the solver options
         options_fmin = {
