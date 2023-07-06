@@ -10,7 +10,7 @@ from sklearn.preprocessing import scale
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 from scipy.stats import norm
-from drrank_prior import minimgap, likelihood, compute_pairwise_probs
+from drrank_prior import minimgap, likelihood
 import tqdm
 from joblib import Parallel, delayed
 import multiprocessing
@@ -121,12 +121,13 @@ class estimate_distribution():
         if std_spline > 0:
             # Standardize
             Q = scale(Q)
-            Q = np.apply_along_axis(lambda w: w / np.sqrt(np.sum(w * w)), 1, Q)
+            Q = np.apply_along_axis(lambda w: w / np.sqrt(np.sum(w * w)), 0, Q)
 
         # Tune G to match mean and SD
         supp_delta = supp_z
         rng = np.random.default_rng(seed=seed)
         alpha_0 = rng.standard_normal((self.spline_order, 1)) 
+        alpha_0 = rng.random((self.spline_order, 1)) 
 
         # Setup the solver options
         options_fmin = {
@@ -149,8 +150,8 @@ class estimate_distribution():
             raise AssertionError("Optimization was unsuccessful")
         
         # minimize and solve our likelihood function
-        result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0, method='BFGS',
-                           options=options_fmin, tol = 1e-6)
+        result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0,
+                          options=options_fmin, tol = 1e-6)
         alpha_hat = result.x
         # Get the estimated g_deltas
         logL, dlogL, g_delta = likelihood(alpha_hat, P, Q, c, optimization = False)
