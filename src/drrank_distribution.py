@@ -230,7 +230,7 @@ class prior_estimate():
         if ncores == -1:
             ncores = multiprocessing.cpu_count() 
                 
-        print(f"\nCalculating pairwise probabilities, using {ncores} cores...")
+        print(f"\nCalculating pi matrix, using {ncores} cores...")
         
         # Pi calculation wrapper
         def pair_dif(post_dist, gaps, i,j):
