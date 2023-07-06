@@ -213,8 +213,8 @@ class prior_estimate():
         Estimate pairwise loss compoments. When power=0, these are
         simply Prob(unit_i > unit_j | Y, G). When power > 0, these are
         E[max(unit_i - unit_j,0)^power | Y, G], enabling extensions to loss
-        functions that weight ranking loss by the cardinal difference
-        between i and j to the power of zero.
+        functions that weight ranking loss by powers of the cardinal
+        difference between i and j.
         Arguments:
             g_delta: if a different estimation of the prior has been used, supply it through g_delta, default is None, i.e. use the estimates from estimates_prior()
             ncores: how many CPUs for parallel processing, default is all CPUs available (ncores = -1)
