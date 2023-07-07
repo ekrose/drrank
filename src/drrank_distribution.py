@@ -10,7 +10,7 @@ from sklearn.preprocessing import scale
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 from scipy.stats import norm
-from src.drrank_prior import minimgap, likelihood
+from drrank_prior import minimgap, likelihood
 import tqdm
 from joblib import Parallel, delayed
 import multiprocessing
