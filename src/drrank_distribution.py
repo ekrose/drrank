@@ -117,7 +117,8 @@ class prior_estimate():
         except Exception as e:
             print("Cannot use R to create spline basis, switching to python")
             Q = dmatrix("bs(x, df = T, degree = 3)-1", {"x": X, 'T': self.spline_order}, return_type='dataframe')
-        
+            # Q = dmatrix("cr(x, df = T)-1", {"x": X, 'T': self.spline_order}, return_type='dataframe')
+
         if std_spline > 0:
             # Standardize
             Q = scale(Q)
@@ -148,7 +149,7 @@ class prior_estimate():
         if result.success != True:
             raise AssertionError("Optimization was unsuccessful")
 
-        print(f"Using T {self.spline_order} and penalty {c:.5f}")
+        print(f"Using df {self.spline_order} and penalty {c:.5f}")
         
         # minimize and solve our likelihood function
         print("\nOptimizing likelihood...")
@@ -178,7 +179,7 @@ class prior_estimate():
         # Save the estimates
         self.prior_g = {'mean_delta': mean_delta, 'sd_delta': sd_delta, 'g_delta': g_delta}
 
-    def plot_estimates(self, g_delta=None, show_plot = True, save_path = None):
+    def plot_estimates(self, g_delta=None, show_plot=True, save_path=None):
         """
         Function to plot an histogram of the estimates
         Arguments:
@@ -198,9 +199,9 @@ class prior_estimate():
 
         # Get the estimated prior_g
         g_delta = self.prior_g['g_delta']
-        # Transform it to get the density
-        g_delta = g_delta/max(g_delta)/3
 
+        # Scale to match histogram
+        g_delta = g_delta/max(g_delta)/3
 
         # Calculate the limits of our plot
         x_min = min(self.supp_delta)*0.99
@@ -211,13 +212,14 @@ class prior_estimate():
         fig, ax = plt.subplots(figsize=(15, 10))
         sns.histplot(data = self.deltas, 
                     line_kws = {'alpha': 0.6}, kde = False,
-                    binwidth = 0.0025
-                    , stat = 'probability', fill = True,
-                alpha = 0.3, common_norm = False, ax = ax)
+                    binwidth = 0.0025,
+                    stat = 'probability',
+                    fill = True,
+                    alpha = 0.3, common_norm = False, ax = ax)
         sns.lineplot(x = self.supp_delta, y = g_delta, color = 'red')
         sns.despine()
         plt.ylabel('Scaled density / mass', fontsize = 25)
-        plt.xlabel('Deltas', fontsize = 25)
+        plt.xlabel(r'$\theta$', fontsize = 25)
         plt.ylim(0,y_lim)
         plt.xlim(x_min, x_max)
         plt.yticks(fontsize = 20)
@@ -287,6 +289,9 @@ class prior_estimate():
         
         Access the estimated pairwise components calling self.pis()
         """
+        if power < 0:
+            raise ValueError("Power option must be weakly positive")
+
         # Estimate posterior if necessary
         if self.post_dist is None:
             self.compute_posterior_distributions(g_delta)

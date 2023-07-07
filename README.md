@@ -15,56 +15,70 @@ pip install drrank
 
 ## Usage
 
-### 1. Estimation of Prior
+### 1. Estimating the prior
 
-Before proceeding with the estimation of the posterior probabilities, estimate the prior distribution $G$ by providing a set of estimates of the probability observation i's latent measure (e.g., bias, quality, etc.) exceeds unit j's, together with their standard errors.
+ **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order spline. 
+
+ To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform, in case $\hat{\theta}_i$ have been transformed to stabilizes variances. When ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, we apply the transform $\hat{\theta}_i = sin^{-1} \sqrt{p_i}$, where $p_i$ is share of applications with name $i$ that received a call back.
+
 
 ```python
 from drrank_distribution import prior_estimate
 # deltas: set of estimates
 # s: set of standard errors
+
 # Initialize the estimator object
 G = prior_estimate(deltas, s, lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution G.
-G.estimate_prior()
-
-# Inspect the results
-G.prior_g()
+G.estimate_prior(support_points=5000, spline_order=5)
 ```
 
-You can then inspect and visualize the estimated prior by calling the following function:
+Use the `support_points` option (default=5000) to pick the number of points of support over which evaluate the prior density. The minimum and maximum of the support are the min and max of `deltas`. 
+
+Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
+
+You can then graph the results by calling the following function:
 
 ```python
 G.plot_estimates()
 ```
 
-### 2. Estimation of posterior features and pairwise probabilities
+### 2. Estimation of posterior features and $P$ matrix
 
-Once the prior distribution $G$ has been estimated, it is possible to estimate the posterior features and the pairwise ordering probabilities $\pi_{ij}$.
+Once the prior distribution $G$ has been estimated, you can estimate posterior means and credible intervals, as well as the matrix pairwise ordering probabilities $\pi_{ij}$.
 
 ```python
 # Compute the posterior features
-G.compute_posteriors()
+G.compute_posteriors(alpha=.05, g_delta=None)
+G.pmean # posterior means
+G.pmean_trans # inverse transformed posterior means
+G.lci # lower limit of 1-alpha credible interval
+G.uci # upper limit of 1-alpha credible interval
+G.lci_trans # lower limit of inverse transformed 1-alpha credible interval
+G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 
 # Compute the pairwise ordering probabilities
-pis = G.compute_pis()
+pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
 ```
 
-In both functionalities, it is possible to provide your own prior distribution G by feeding an array to the *g_delta* argument.
+In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_delta` argument. This density must take support on the values determined by `G.supp_delta`.
+
+`compute_pis()` also provides the option to compute $\pi_{ij}$ as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
 ### 3. Estimate rankings
 
-To compute rankings, use the **fit** function with a matrix $P$ of posterior probabilities that observation i's latent measure $\theta_i$ (e.g., bias, quality, etc.) exceeds unit j's. That is, each element of this matrix takes the form:
+To compute rankings, use the **fit** function with a matrix $P$. In the unweighted case, $P$ reflects the posterior probabilities that observation i's latent measure $\theta_i$ exceeds unit j's. That is, each element of this matrix takes the form:
 
 $\pi_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
 
-**DRrank** expects these probabilities to satisfy $\pi_{ij} = 1-\pi_{ji}$. 
+**DRrank** expects these probabilities to satisfy $\pi_{ij} = 1-\pi_{ji}$.
 
+In the weighted case, $P$ captures expected differences between i and j's value of $\theta$, as discussed above. 
 
 There are two ways to use **DRrank**.
 
-First, one can supply a parameter $\lambda \in [0,1]$, which corresponds to the user's value of correctly ranking pairs of units relative to the costs of misclassifying them. $\lambda=1$ implies correct and incorrect rankings are valued equally, while $\lambda=0$ implies correct rankings are not valued at all. In pairwise comparisons between units, it is optimal to assign unit $i$ a higher grade than unit $j$ when $\pi_{ij} > 1/(1+\lambda)$, which implies $\lambda$ also determines the minimum level of posterior certainty required to rank units pairwise.
+First, one can supply a parameter $\lambda \in [0,1]$, which corresponds to the user's value of correctly ranking pairs of units relative to the costs of misclassifying them. $\lambda=1$ implies correct and incorrect rankings are valued equally, while $\lambda=0$ implies correct rankings are not valued at all. In the unweighted case, it is optimal to assign unit $i$ a higher grade than unit $j$ when $\pi_{ij} > 1/(1+\lambda)$, which implies $\lambda$ also determines the minimum level of posterior certainty required to rank units pairwise.
 
 ```python
 from drrank import fit
