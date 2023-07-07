@@ -224,7 +224,7 @@ class prior_estimate():
         plt.xticks(fontsize = 20)
         ax.set_axisbelow(True)
         ax.yaxis.grid(color='gray', alpha = 0.2)
-        ax.text(x_max, y_lim*0.85, "Bias-corrected SD: {:4.4f}\nDecon. implied SD: {:4.4f}\nMean: {:4.4f}\nDecon. implied mean: {:4.4f}".format(
+        ax.text(x_max, y_lim*0.84, "Bias-corrected SD: {:4.4f}\nDecon. implied SD: {:4.4f}\nMean: {:4.4f}\nDecon. implied mean: {:4.4f}".format(
             self.sd_ests, self.prior_g['sd_delta'], self.mean_ests, self.prior_g['mean_delta']), fontsize = 20, horizontalalignment = 'right')
 
         if save_path != None:
@@ -311,7 +311,11 @@ class prior_estimate():
         pis = np.zeros((self.F,self.F))
         for i in tqdm.tqdm(range(self.F)):
             def par_wrapper(j):
-                return pair_dif(self.post_dist, gaps, i, j)
+                # if power == 0, then p_ij = 1 - p_ji
+                if power == 0 and i > j and 0 == 1:
+                    return 1 - pis[j,i]
+                else:
+                    return pair_dif(self.post_dist, gaps, i, j)
             pis[i,:] = Parallel(n_jobs=ncores)(delayed(par_wrapper)(j) for j in range(self.F))
 
         print("...done!")
