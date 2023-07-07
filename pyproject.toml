@@ -29,7 +29,8 @@ dependencies = [
 "tqdm",
 "joblib>=1.1.0",
 "patsy>=0.5.2"
-
+"matplotlib",
+"seaborn"
 ]
 
 [project.optional-dependencies]

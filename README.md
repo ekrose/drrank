@@ -20,17 +20,23 @@ pip install drrank
 Before proceeding with the estimation of the posterior probabilities, estimate the prior distribution $G$ by providing a set of estimates of the probability observation i's latent measure (e.g., bias, quality, etc.) exceeds unit j's, together with their standard errors.
 
 ```python
-from drrank_distribution import estimate_distribution
+from drrank_distribution import prior_estimate
 # deltas: set of estimates
 # s: set of standard errors
 # Initialize the estimator object
-drrank_est = estimate_distribution(deltas, s)
+G = prior_estimate(deltas, s, lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution G.
-drrank_est.estimate_prior()
+G.estimate_prior()
 
 # Inspect the results
-drrank_est.prior_g()
+G.prior_g()
+```
+
+You can then inspect and visualize the estimated prior by calling the following function:
+
+```python
+G.plot_estimates()
 ```
 
 ### 2. Estimation of posterior features and pairwise probabilities
@@ -39,14 +45,10 @@ Once the prior distribution $G$ has been estimated, it is possible to estimate t
 
 ```python
 # Compute the posterior features
-drrank_est.compute_posteriors()
-# Access the posterior features
-drrank_est.posterior_features()
+G.compute_posteriors()
 
 # Compute the pairwise ordering probabilities
-drrank_est.compute_pis()
-# Access the pis
-drrank_est.pis()
+pis = G.compute_pis()
 ```
 
 In both functionalities, it is possible to provide your own prior distribution G by feeding an array to the *g_delta* argument.

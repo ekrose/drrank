@@ -10,11 +10,12 @@ from sklearn.preprocessing import scale
 from scipy.optimize import minimize_scalar
 from scipy.optimize import minimize
 from scipy.stats import norm
-from drrank_prior import minimgap, likelihood
+from src.drrank_prior import minimgap, likelihood
 import tqdm
 from joblib import Parallel, delayed
 import multiprocessing
-import time
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 class prior_estimate():
     """
@@ -77,6 +78,10 @@ class prior_estimate():
         # Report mean and std dev of prior
         mean_ests = np.mean(self.deltas) # Calculate the mean of delta_hat
         sd_ests = np.sqrt(np.var(self.deltas, ddof=1) - np.mean(self.s**2))
+
+        # Save them
+        self.mean_ests = mean_ests
+        self.sd_ests = sd_ests
 
         # Estimate the variance-covariance matrix of mean and sd. estimates
         var_mean_ests = np.sum(self.s**2) / self.F**2 
@@ -172,6 +177,62 @@ class prior_estimate():
 
         # Save the estimates
         self.prior_g = {'mean_delta': mean_delta, 'sd_delta': sd_delta, 'g_delta': g_delta}
+
+    def plot_estimates(self, g_delta=None, show_plot = True, save_path = None):
+        """
+        Function to plot an histogram of the estimates
+        Arguments:
+            g_delta: provide your own estimates of the prior distribution
+            show_plot: set to True to display the plot
+            save_path: specify the path to save the plot, set to None to avoid saving it
+        """
+
+        if g_delta == None:
+            try:
+                g_delta = self.prior_g['g_delta']
+            except:
+                raise ValueError("Prior distribution was not estimated, cannot proceed to compute the posteriors")
+        else:
+            print("Using user-supplied prior distribution")
+                
+
+        # Get the estimated prior_g
+        g_delta = self.prior_g['g_delta']
+        # Transform it to get the density
+        g_delta = g_delta/max(g_delta)/3
+
+
+        # Calculate the limits of our plot
+        x_min = min(self.supp_delta)*0.99
+        x_max = max(self.supp_delta)*1.01
+        y_lim = min([round(max(g_delta),1)+0.2, 1])
+
+        # Plot the distribution
+        fig, ax = plt.subplots(figsize=(15, 10))
+        sns.histplot(data = self.deltas, 
+                    line_kws = {'alpha': 0.6}, kde = False,
+                    binwidth = 0.0025
+                    , stat = 'probability', fill = True,
+                alpha = 0.3, common_norm = False, ax = ax)
+        sns.lineplot(x = self.supp_delta, y = g_delta, color = 'red')
+        sns.despine()
+        plt.ylabel('Scaled density / mass', fontsize = 25)
+        plt.xlabel('Deltas', fontsize = 25)
+        plt.ylim(0,y_lim)
+        plt.xlim(x_min, x_max)
+        plt.yticks(fontsize = 20)
+        plt.xticks(fontsize = 20)
+        ax.set_axisbelow(True)
+        ax.yaxis.grid(color='gray', alpha = 0.2)
+        ax.text(x_max, y_lim*0.85, "Bias-corrected SD: {:4.4f}\nDecon. implied SD: {:4.4f}\nMean: {:4.4f}\nDecon. implied mean: {:4.4f}".format(
+            self.sd_ests, self.prior_g['sd_delta'], self.mean_ests, self.prior_g['mean_delta']), fontsize = 20, horizontalalignment = 'right')
+
+        if save_path != None:
+            plt.tight_layout()
+            plt.savefig(save_path, format='pdf', dpi=300)
+
+        if show_plot:
+            plt.show()
 
     def compute_posterior_distributions(self, g_delta=None):
         # Decide which prior density to use
