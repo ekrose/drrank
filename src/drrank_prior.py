@@ -7,7 +7,8 @@ def minimgap(c, P, Q, alpha_0, options_fmin, supp_delta, sd_ests, mean_ests, vcv
     """
     Minmgap estimation of the G prior function
     """
-    result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0, options=options_fmin)
+    result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0,
+            method='CG', jac=True, options=options_fmin, tol=1e-10)
     alpha_hat = result.x
     logL, dlogL, g_delta = likelihood(alpha_hat, P, Q, c, optimization=False)
 
@@ -37,7 +38,7 @@ def likelihood(alpha, P, Q, c, optimization = True):
     dg = np.tile(g.T, (T, 1)) * (Q.T - np.repeat((Q.T @ g).reshape(-1, 1), repeats = M, axis = 1))
     dlogL = -(np.sum(np.repeat((1 / (P @ g)).reshape(-1, 1), repeats = T, axis = 1) * (P @ dg.T), axis=0) - (c * alpha / np.sqrt(alpha.T @ alpha)))
     if optimization:
-        return logL
+        return logL, dlogL
     else:
         return logL, dlogL, g
 

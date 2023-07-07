@@ -7,8 +7,7 @@ import pandas as pd
 from scipy.stats import norm
 from patsy import dmatrix
 from sklearn.preprocessing import scale
-from scipy.optimize import minimize_scalar
-from scipy.optimize import minimize
+from scipy.optimize import minimize, minimize_scalar
 from scipy.stats import norm
 from drrank_prior import minimgap, likelihood
 import tqdm
@@ -115,9 +114,8 @@ class prior_estimate():
             Xr = robjects.r.matrix(X, nrow=nr, ncol=nc)
             Q = ns(Xr, df = self.spline_order)
         except Exception as e:
-            print("Cannot use R to create spline basis, switching to python")
-            Q = dmatrix("bs(x, df = T, degree = 3)-1", {"x": X, 'T': self.spline_order}, return_type='dataframe')
-            # Q = dmatrix("cr(x, df = T)-1", {"x": X, 'T': self.spline_order}, return_type='dataframe')
+            print("Cannot use R to create cubic spline basis, switching to python")
+            Q = dmatrix("cr(x, df = T)-1", {"x": X, 'T': self.spline_order}, return_type='dataframe')
 
         if std_spline > 0:
             # Standardize
@@ -127,13 +125,11 @@ class prior_estimate():
         # Tune G to match mean and SD
         rng = np.random.default_rng(seed=seed)
         alpha_0 = rng.standard_normal((self.spline_order, 1)) 
-        # alpha_0 = rng.random((self.spline_order, 1)) 
 
         # Setup the solver options
         options_fmin = {
             'disp': False,
-            'maxiter': 3000,
-            'gtol': 1e-8
+            'maxiter':10000,
         }
 
         print("\nPicking penalzation parameter...")
@@ -142,8 +138,15 @@ class prior_estimate():
         result = minimize_scalar(lambda x: minimgap(x, P, Q, alpha_0, options_fmin, 
                                                     supp_delta, sd_ests, mean_ests, 
                                                     vcv_ests),
-                                bounds=(0, 0.3))
+                                bounds=(0, 0.1), tol=1e-10,
+                                method='bounded',
+                                options={'maxiter':10000})
         c = result.x
+        if minimgap(0, P, Q, alpha_0, options_fmin, 
+                    supp_delta, sd_ests, mean_ests, 
+                     vcv_ests) < result.fun:
+            c = 0
+            print("Unpenalized likelihood provides best fit, setting penalty = 0")
 
         # Check if the minimization was successful
         if result.success != True:
@@ -154,7 +157,8 @@ class prior_estimate():
         # minimize and solve our likelihood function
         print("\nOptimizing likelihood...")
         result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0,
-                          options=options_fmin, tol = 1e-6)
+                        method='CG', jac=True, 
+                        options=options_fmin, tol=1e-10)
         alpha_hat = result.x
         if result.success != True:
             print("Warning: likelihood may not have converged")
