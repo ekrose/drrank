@@ -383,7 +383,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     df_plot = pd.concat([ranking, posterior_features], axis = 1)
 
     # Sort everything
-    df_plot = df_plot.sort_values([group], ascending=False)
+    df_plot = df_plot.sort_values([group, "condorcet_rank"], ascending=False)
 
     # Get upper and lower bounds
     df_plot["lb"] = df_plot['pmean'] - df_plot['lci']
@@ -413,6 +413,8 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     plt.legend(mean_lines,labels, loc='upper left', markerscale=1, bbox_to_anchor=(0,1))
     if ylabels != None:
         plt.yticks(y_range, ylabels, fontsize=4)    
+    else:
+        plt.yticks(y_range, df_plot['obs_idx'], fontsize=4)    
 
     ax1.set_xlabel('Posterior means')
     ax1.spines['right'].set_visible(False)
