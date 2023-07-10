@@ -9,7 +9,7 @@ from gurobipy import GRB
 from scipy.sparse.csgraph import connected_components
 import multiprocessing
 from multiprocessing.pool import ThreadPool
-
+import matplotlib.pyplot as plt
 from drrank_loss import dp, tau
 
 ## function to clean the Pij matrix ##
@@ -358,3 +358,73 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
         final_df = final_df.merge(d, on='obs_idx', validate="1:1")
 
     return final_df
+
+
+def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None):
+    """
+    Function to plot an histogram of the estimates
+    Arguments:
+        ranking: dataframe with ranking results from drrank.fit()
+        posterior_features: posterior features computed from the drrank.prior_estimate() class
+        gradecol: column name with the ranking grades, useful when fitting multiple lambdas. If None, looks for the right columns and pick the first one
+        ylabels: provide the names of the observations, if None simply shows the observation number
+        show_plot: set to True to display the plot
+        save_path: specify the path to save the plot, set to None to avoid saving it
+    """
+    # Find smallest lambda that delivers num_groups
+    if gradecol is not None:
+        group = [x for x in ranking.keys() if gradecol in x][0]
+    else:
+        group = [x for x in ranking.keys() if 'grades_' in x][0]
+    print("Using group {}".format(group))
+
+    # First step - get posterior features:
+    # Merge posterior features with the group rankings
+    df_plot = pd.concat([ranking, posterior_features], axis = 1)
+
+    # Sort everything
+    df_plot = df_plot.sort_values([group], ascending=False)
+
+    # Get upper and lower bounds
+    df_plot["lb"] = df_plot['pmean'] - df_plot['lci']
+    df_plot["ub"] = df_plot['uci'] - df_plot['pmean']
+
+    # Construct figure
+    fig, ax1 = plt.subplots(dpi=400, figsize=(6,7))
+    y_range = np.arange(len(df_plot))
+    groups = df_plot[group].unique()
+    # Prepare labels for each group
+    if len(groups) > 6:
+        labels = [r'${} \bigstar$'.format(c) for c in range(len(groups),0,-1)]
+    else:
+        labels = [r'$\bigstar$'*c for c in range(len(groups),0,-1)]
+
+    # Iterate and produce a plot for each group
+    mean_lines = []
+    for i, gr in enumerate(np.flip(groups)):
+        idx = df_plot[group] == gr
+        mean_lines += [ax1.errorbar(df_plot['pmean'][idx], y_range[idx],
+                        xerr=[df_plot['lb'][idx], df_plot['ub'][idx]],
+                        alpha=0.6, ms=1.5, elinewidth=0.6,
+                    fmt='o', capsize=1.5, label=labels[i]
+                        )]
+
+    plt.grid(axis='y', alpha=0.35, linewidth=0.3)
+    plt.legend(mean_lines,labels, loc='upper left', markerscale=1, bbox_to_anchor=(0,1))
+    if ylabels != None:
+        plt.yticks(y_range, ylabels, fontsize=4)    
+
+    ax1.set_xlabel('Posterior means')
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['top'].set_visible(False)
+
+    if save_path != None:
+        plt.tight_layout()
+        plt.savefig(save_path, format='pdf', dpi=300)
+        print("Figure saved!")
+
+    if show_plot:
+        plt.show()
+
+    plt.clf()
+    plt.close('all')
