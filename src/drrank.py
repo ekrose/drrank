@@ -360,7 +360,7 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
     return final_df
 
 
-def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None):
+def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None, trans = False):
     """
     Function to plot an histogram of the estimates
     Arguments:
@@ -370,6 +370,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
         ylabels: provide the names of the observations, if None simply shows the observation number
         show_plot: set to True to display the plot
         save_path: specify the path to save the plot, set to None to avoid saving it
+        trans: set to True if we want to plot the transformed posterior means
     """
     # Find smallest lambda that delivers num_groups
     if gradecol is not None:
@@ -386,8 +387,14 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     df_plot = df_plot.sort_values([group, "condorcet_rank"], ascending=False)
 
     # Get upper and lower bounds
-    df_plot["lb"] = df_plot['pmean'] - df_plot['lci']
-    df_plot["ub"] = df_plot['uci'] - df_plot['pmean']
+    if trans:
+        df_plot["lb"] = df_plot['pmean_trans'] - df_plot['lci_trans']
+        df_plot["ub"] = df_plot['uci_trans'] - df_plot['pmean_trans']
+        mean_col = 'pmean_trans'
+    else:
+        df_plot["lb"] = df_plot['pmean'] - df_plot['lci']
+        df_plot["ub"] = df_plot['uci'] - df_plot['pmean']
+        mean_col = 'pmean'
 
     # Construct figure
     fig, ax1 = plt.subplots(dpi=400, figsize=(6,7))
@@ -403,7 +410,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     mean_lines = []
     for i, gr in enumerate(np.flip(groups)):
         idx = df_plot[group] == gr
-        mean_lines += [ax1.errorbar(df_plot['pmean'][idx], y_range[idx],
+        mean_lines += [ax1.errorbar(df_plot[mean_col][idx], y_range[idx],
                         xerr=[df_plot['lb'][idx], df_plot['ub'][idx]],
                         alpha=0.6, ms=1.5, elinewidth=0.6,
                     fmt='o', capsize=1.5, label=labels[i]
