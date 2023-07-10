@@ -138,9 +138,10 @@ class prior_estimate():
         result = minimize_scalar(lambda x: minimgap(x, P, Q, alpha_0, options_fmin, 
                                                     supp_delta, sd_ests, mean_ests, 
                                                     vcv_ests),
-                                bounds=(0, 0.1), tol=1e-10,
+                                bounds=(0, 0.1),
                                 method='bounded',
-                                options={'maxiter':10000})
+                                options={'maxiter':10000,
+                                         'xatol':1e-10})
         c = result.x
         if minimgap(0, P, Q, alpha_0, options_fmin, 
                     supp_delta, sd_ests, mean_ests, 
@@ -270,6 +271,15 @@ class prior_estimate():
 
         self.lci_trans = self.inv_transform(self.lci)
         self.uci_trans = self.inv_transform(self.uci)
+
+        self.posterior_df = pd.DataFrame({
+            'pmean': self.pmean,
+            'pmean_trans': self.pmean_trans,
+            'lci': self.lci,
+            'uci': self.uci,
+            'lci_trans': self.lci_trans,
+            'uci_trans': self.uci_trans
+        })
     
     def compute_posteriors(self, alpha=.05, g_delta=None):
         # Get posterior distributions
