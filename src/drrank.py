@@ -367,7 +367,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
         ranking: dataframe with ranking results from drrank.fit()
         posterior_features: posterior features computed from the drrank.prior_estimate() class
         gradecol: column name with the ranking grades, useful when fitting multiple lambdas. If None, looks for the right columns and pick the first one
-        ylabels: provide the names of the observations, if None simply shows the observation number
+        ylabels: column in "ranking" providing the names of the observations, if None simply shows the observation number
         show_plot: set to True to display the plot
         save_path: specify the path to save the plot, set to None to avoid saving it
         trans: set to True if we want to plot the transformed posterior means
@@ -419,7 +419,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     plt.grid(axis='y', alpha=0.35, linewidth=0.3)
     plt.legend(mean_lines,labels, loc='lower right', markerscale=1, bbox_to_anchor=(0,1))
     if ylabels != None:
-        plt.yticks(y_range, ylabels, fontsize=4)    
+        plt.yticks(y_range, df_plot[ylabels], fontsize=4)    
     else:
         plt.yticks(y_range, df_plot['obs_idx'], fontsize=4)    
 
