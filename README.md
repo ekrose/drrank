@@ -58,6 +58,8 @@ G.uci # upper limit of 1-alpha credible interval
 G.lci_trans # lower limit of inverse transformed 1-alpha credible interval
 G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 
+G.posterior_df.head() # Access everything as a Dataframe
+
 # Compute the pairwise ordering probabilities
 pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
 ```
@@ -117,4 +119,13 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 
 # Fit the report card function
 results = fit(p_ij, lamb = None, DR = 0.05)
+```
+
+
+Finally, we provide a functionality to plot the results of both the posterior features estimates and the rankings:
+
+```python
+from drrank import fig_ranks
+
+fig_ranks(results, G.posterior_df)
 ```
