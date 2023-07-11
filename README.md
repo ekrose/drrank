@@ -38,10 +38,11 @@ data.head()
 
 ### 1. Estimating the prior
 
- **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order spline. 
+ **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order natural spline. 
 
- To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform, in case $\hat{\theta}_i$ have been transformed to stabilizes variances. When ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, we apply the transform $\hat{\theta}_i = sin^{-1} \sqrt{p_i}$, where $p_i$ is share of applications with name $i$ that received a call back.
+ To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform, in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. When ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, we apply the transform $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback.
 
+To estimate the prior, feed `prior_estimate` an array of $\hat{\theta}_i$ and standard errors.
 
 ```python
 from drrank_distribution import prior_estimate
@@ -51,13 +52,13 @@ deltas = data.deltas.values
 s = data.s.values
 
 # Initialize the estimator object
-G = prior_estimate(deltas, s, lambda x: np.power(np.sin(x),2))
+G = prior_estimate(deltas, s, transform=lambda x: np.power(np.sin(x),2))
 
-# Estimate the prior distribution G.
+# Estimate the prior distribution G 
 G.estimate_prior(support_points=5000, spline_order=5)
 ```
 
-Use the `support_points` option (default=5000) to pick the number of points of support over which evaluate the prior density. The minimum and maximum of the support are the min and max of `deltas`. 
+Use the `support_points` option (default=5000) to pick the number of points of support over which to evaluate the prior density. The minimum and maximum of the support are the minimum and maximum of `deltas`. 
 
 Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
 
@@ -95,7 +96,7 @@ Within the function you can specify the following arguments:
 
 ### 2. Estimation of posterior features and $P$ matrix
 
-Once the prior distribution $G$ has been estimated, you can estimate posterior means and credible intervals, as well as the matrix pairwise ordering probabilities $\pi_{ij}$.
+Once the prior distribution $G$ has been estimated, you can estimate posterior means and credible intervals, as well as the matrix of pairwise ordering probabilities $\pi_{ij}$.
 
 ```python
 # Compute the posterior features
@@ -107,7 +108,7 @@ G.uci # upper limit of 1-alpha credible interval
 G.lci_trans # lower limit of inverse transformed 1-alpha credible interval
 G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 
-G.posterior_df.head() # Access everything as a Dataframe
+G.posterior_df.head() # Dataframe of posterior features
 ```
 
 |    |    pmean |   pmean_trans |      lci |      uci |   lci_trans |   uci_trans |
@@ -127,7 +128,7 @@ pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
 
 In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_delta` argument. This density must take support on the values determined by `G.supp_delta`.
 
-`compute_pis()` also provides the option to compute $\pi_{ij}$ as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
+`compute_pis` also provides the option to compute $\pi_{ij}$ as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
 ### 3. Estimate rankings
 
@@ -135,7 +136,7 @@ To compute rankings, use the **fit** function with a matrix $P$. In the unweight
 
 $\pi_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
 
-**DRrank** expects these probabilities to satisfy $\pi_{ij} = 1-\pi_{ji}$.
+**DRrank** expects these probabilities to satisfy $\pi_{ij} = 1-\pi_{ji}$ and will report a warning if that does not appear to be the case.
 
 In the weighted case, $P$ captures expected differences between i and j's value of $\theta$, as discussed above. 
 
@@ -182,8 +183,7 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 results_dr = fit(p_ij, lamb = None, DR = 0.05)
 ```
 
-
-Finally, we provide a functionality to plot the results of both the posterior features estimates and the rankings:
+Finally, we provide functionality to plot grades along with posterior means and credible intervals:
 
 ```python
 from drrank import fig_ranks

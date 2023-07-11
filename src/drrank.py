@@ -360,7 +360,7 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
     return final_df
 
 
-def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None, trans = False):
+def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None, trans=False):
     """
     Function to plot an histogram of the estimates
     Arguments:
