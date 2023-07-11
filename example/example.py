@@ -23,7 +23,7 @@ s = data.s.values
 G = prior_estimate(thetas, s, lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution G.
-G.estimate_prior(supp_points=5000, spline_order=5)
+G.estimate_prior(supp_points=5000, spline_order=5, seed = 123)
 
 # Dictionary with the prior distribution
 G.prior_g
