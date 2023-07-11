@@ -207,21 +207,23 @@ class prior_estimate():
 
         # Scale to match histogram
         g_delta = g_delta/max(g_delta)/3
+        support = self.supp_delta.copy()
+        deltas = self.deltas.copy()
 
         # Calculate the limits of our plot
-        x_min = min(self.supp_delta)*0.99
-        x_max = max(self.supp_delta)*1.01
+        x_min = min(support)*0.99
+        x_max = max(support)*1.01
         y_lim = min([round(max(g_delta),1)+0.2, 1])
 
         # Plot the distribution
         fig, ax = plt.subplots(figsize=(15, 10))
-        sns.histplot(data = self.deltas, 
+        sns.histplot(data = deltas, 
                     line_kws = {'alpha': 0.6}, kde = False,
                     binwidth = 0.0025,
                     stat = 'probability',
                     fill = True,
                     alpha = 0.3, common_norm = False, ax = ax)
-        sns.lineplot(x = self.supp_delta, y = g_delta, color = 'red')
+        sns.lineplot(x = support, y = g_delta, color = 'red')
         sns.despine()
         plt.ylabel('Scaled density / mass', fontsize = 25)
         plt.xlabel(r'$\theta$', fontsize = 25)
