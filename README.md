@@ -15,9 +15,13 @@ pip install drrank
 
 ## Usage
 
-### 0. Load the name example
+### 1. Load sample data
 
-Within the folder *example*, we provide the file *name_example.csv*, which contains the estimated thetas and their relative standard errors of the Name Ranking problem in Section 4 of the paper. Check also the file *example.py* for all the code displayed in this README.
+**DRrank** grades units based on noisy estimates of a latent attribute. You can construct these estimates however you'd like---all **DRrank** requires is a vector of estimates, $\hat{\theta}_i$, and their associated standard errors, $s_i$.
+
+To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. This used implies that $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $\hat{\theta}_i$ is $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
+
+**DRrank** provides the functionality to account for any variance-stabilizing transformations, but using one is not strictly necessary. **DRrank** can also accomodated cases where your $\hat{\theta}_i$ directly capture untransformed estiamtes of the relevant latent attribute.
 
 ```python
 import pandas as pd
@@ -36,20 +40,18 @@ data.head()
 |         5 | 0.534998 | 0.0136503 | Amy         |
 
 
-### 1. Estimating the prior
+### 2. Estimating the prior
 
  **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order natural spline. 
 
- To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform, in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. When ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, we apply the transform $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback.
+To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2.
 
 To estimate the prior, feed `prior_estimate` an array of $\hat{\theta}_i$ and standard errors.
 
 ```python
 from drrank_distribution import prior_estimate
-# deltas: set of estimates
-# s: set of standard errors
-deltas = data.deltas.values
-s = data.s.values
+deltas = data.deltas.values # set of estimates
+s = data.s.values # setstandard errors
 
 # Initialize the estimator object
 G = prior_estimate(deltas, s, transform=lambda x: np.power(np.sin(x),2))
@@ -78,7 +80,6 @@ G.prior_g['sd_delta']
 G.prior_g['g_delta']
 ```
 
-
 You can then graph the results by calling the following function:
 
 ```python
@@ -94,7 +95,7 @@ Within the function you can specify the following arguments:
 - *show_plot*: whether to show the plot or not (default = True)
 - *save_path*: path to where the plot will be saved, None implies the graph will not be saved (default = None) 
 
-### 2. Estimation of posterior features and $P$ matrix
+### 3. Estimation of posterior features and $P$ matrix
 
 Once the prior distribution $G$ has been estimated, you can estimate posterior means and credible intervals, as well as the matrix of pairwise ordering probabilities $\pi_{ij}$.
 
@@ -130,7 +131,7 @@ In both functions, it is possible to provide your own prior distribution G by fe
 
 `compute_pis` also provides the option to compute $\pi_{ij}$ as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
-### 3. Estimate rankings
+### 4. Estimate rankings
 
 To compute rankings, use the **fit** function with a matrix $P$. In the unweighted case, $P$ reflects the posterior probabilities that observation i's latent measure $\theta_i$ exceeds unit j's. That is, each element of this matrix takes the form:
 
