@@ -141,11 +141,11 @@ class prior_estimate():
                                 bounds=(0, 0.1),
                                 method='bounded',
                                 options={'maxiter':10000,
-                                         'xatol':1e-10})
+                                         'xatol':1e-12})
         c = result.x
-        if minimgap(0, P, Q, alpha_0, options_fmin, 
+        if (minimgap(0, P, Q, alpha_0, options_fmin, 
                     supp_theta, sd_ests, mean_ests, 
-                     vcv_ests) < result.fun:
+                     vcv_ests) < result.fun):
             c = 0
             print("Unpenalized likelihood provides best fit, setting penalty = 0")
 
@@ -159,7 +159,7 @@ class prior_estimate():
         print("\nOptimizing likelihood...")
         result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0,
                         method='CG', jac=True, 
-                        options=options_fmin, tol=1e-10)
+                        options=options_fmin, tol=1e-12)
         alpha_hat = result.x
         print("Likelihood: {:5.4f}".format(result.fun))
         if result.success != True:
