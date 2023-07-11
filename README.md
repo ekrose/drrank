@@ -44,7 +44,7 @@ data.head()
 
  **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order natural spline. 
 
-To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2.
+To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$.
 
 To estimate the prior, feed `prior_estimate` an array of $\hat{\theta}_i$ and standard errors.
 
