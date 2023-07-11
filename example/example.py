@@ -37,7 +37,7 @@ G.prior_g['sd_delta']
 G.prior_g['g_delta']
 
 # Plot the estimated prior distribution
-G.plot_estimates(save_path = "example/prior_distribution.pdf")
+G.plot_estimates(save_path = "example/prior_distribution.jpg")
 
 # 2. Posterior features and Pairwise probabilities --------------------------------
 
@@ -81,4 +81,4 @@ from drrank import fig_ranks
 
 # Merge the results with the identity of our observations
 results['firstname'] = data.firstname
-fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.pdf')
+fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')

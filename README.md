@@ -84,10 +84,10 @@ You can then graph the results by calling the following function:
 ```python
 
 # Plot the estimated prior distribution
-G.plot_estimates(save_path = "example/prior_distribution.pdf")
+G.plot_estimates(save_path = "example/prior_distribution.jpg")
 ```
 
-![prior_distribution](example/prior_distribution.pdf)
+![prior_distribution](example/prior_distribution.jpg)
 
 Within the function you can specify the following arguments:
 - *g_delta*: provide your own prior distribution G, None implies the function will utilize the estimated G from the *estimate_prior()* method (default = None)
@@ -190,10 +190,10 @@ from drrank import fig_ranks
 
 # Merge the results with the identity of our observations
 results['firstname'] = data.firstname
-fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.pdf')
+fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')
 ```
 
-![name_ranking](example/name_ranking.pdf)
+![name_ranking](example/name_ranking.jpg)
 
 Within the function you can specify the following arguments:
 - *results*: ranking results from *drrank.fit*
