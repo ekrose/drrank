@@ -21,8 +21,6 @@ pip install drrank
 
 To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. The transformation used computes estimates as $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $\hat{\theta}_i$ is $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
 
-**DRrank** provides the functionality to account for any variance-stabilizing transformations, but using one is not strictly necessary. **DRrank** can also accomodated cases where your $\hat{\theta}_i$ directly capture untransformed estiamtes of the relevant latent attribute.
-
 ```python
 import pandas as pd
 
@@ -39,6 +37,8 @@ data.head()
 |         4 | 0.532129 | 0.0138126 | Amanda      |
 |         5 | 0.534998 | 0.0136503 | Amy         |
 
+
+While **DRrank** provides the functionality to account for any variance-stabilizing transformations, using one is not strictly necessary. **DRrank** can also accomodate cases where the $\hat{\theta}_i$ directly capture untransformed estimates of the relevant latent attribute.
 
 ### 2. Estimating the prior
 
