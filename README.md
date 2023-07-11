@@ -15,6 +15,27 @@ pip install drrank
 
 ## Usage
 
+### 0. Load the name example
+
+Within the folder *example*, we provide the file *name_example.csv*, which contains the estimated thetas and their relative standard errors of the Name Ranking problem in Section 4 of the paper. Check also the file *example.py* for all the code displayed in this README.
+
+```python
+import pandas as pd
+
+# Read in the data
+data = pd.read_csv(os.getcwd() + '/example/theta_names_estimates.csv')
+data.head()
+```
+
+|   name_id |   deltas |         s | firstname   |
+|----------:|---------:|----------:|:------------|
+|         1 | 0.53788  | 0.0137214 | Adam        |
+|         2 | 0.518394 | 0.0173332 | Aisha       |
+|         3 | 0.53767  | 0.0174933 | Allison     |
+|         4 | 0.532129 | 0.0138126 | Amanda      |
+|         5 | 0.534998 | 0.0136503 | Amy         |
+
+
 ### 1. Estimating the prior
 
  **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order spline. 
@@ -26,6 +47,8 @@ pip install drrank
 from drrank_distribution import prior_estimate
 # deltas: set of estimates
 # s: set of standard errors
+deltas = data.deltas.values
+s = data.s.values
 
 # Initialize the estimator object
 G = prior_estimate(deltas, s, lambda x: np.power(np.sin(x),2))
@@ -38,11 +61,37 @@ Use the `support_points` option (default=5000) to pick the number of points of s
 
 Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
 
+The estimated prior distribution will be saved as a dictionary, you can access it with the following code:
+
+```python
+
+# Dictionary with the prior distribution
+G.prior_g
+
+# Keys:
+# mean_delta: mean of the prior
+G.prior_g['mean_delta']
+# sd_delta: std. of the prior
+G.prior_g['sd_delta']
+# g_delta: array of the actual prior G
+G.prior_g['g_delta']
+```
+
+
 You can then graph the results by calling the following function:
 
 ```python
-G.plot_estimates()
+
+# Plot the estimated prior distribution
+G.plot_estimates(save_path = "example/prior_distribution.pdf")
 ```
+
+![prior_distribution](example/prior_distribution.pdf)
+
+Within the function you can specify the following arguments:
+- *g_delta*: provide your own prior distribution G, None implies the function will utilize the estimated G from the *estimate_prior()* method (default = None)
+- *show_plot*: whether to show the plot or not (default = True)
+- *save_path*: path to where the plot will be saved, None implies the graph will not be saved (default = None) 
 
 ### 2. Estimation of posterior features and $P$ matrix
 
@@ -59,7 +108,19 @@ G.lci_trans # lower limit of inverse transformed 1-alpha credible interval
 G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 
 G.posterior_df.head() # Access everything as a Dataframe
+```
 
+|    |    pmean |   pmean_trans |      lci |      uci |   lci_trans |   uci_trans |
+|---:|---------:|--------------:|---------:|---------:|------------:|------------:|
+|  0 | 0.522254 |      0.248849 | 0.511952 | 0.529469 |    0.239983 |    0.255101 |
+|  1 | 0.515227 |      0.242848 | 0.494757 | 0.527798 |    0.225452 |    0.253645 |
+|  2 | 0.520531 |      0.247375 | 0.496991 | 0.529019 |    0.227322 |    0.254709 |
+|  3 | 0.521341 |      0.248065 | 0.498887 | 0.529003 |    0.228913 |    0.254695 |
+|  4 | 0.521891 |      0.248537 | 0.502037 | 0.529244 |    0.231565 |    0.254905 |
+
+Then compute the pairwise ordering probabilities $\pi_{ij}$:
+
+```python
 # Compute the pairwise ordering probabilities
 pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
 ```
@@ -118,7 +179,7 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 ```python
 
 # Fit the report card function
-results = fit(p_ij, lamb = None, DR = 0.05)
+results_dr = fit(p_ij, lamb = None, DR = 0.05)
 ```
 
 
@@ -127,5 +188,16 @@ Finally, we provide a functionality to plot the results of both the posterior fe
 ```python
 from drrank import fig_ranks
 
-fig_ranks(results, G.posterior_df)
+# Merge the results with the identity of our observations
+results['firstname'] = data.firstname
+fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.pdf')
 ```
+
+![name_ranking](example/name_ranking.pdf)
+
+Within the function you can specify the following arguments:
+- *results*: ranking results from *drrank.fit*
+- *posterior_features*: posterior features computed through *G.compute_posteriors()*
+- *ylabels*: optional, specify the column in *results* where we have stored the labels of each observation (default = None)
+- *show_plot*: whether to show the plot or not (default = True)
+- *save_path*: path to where the plot will be saved, None implies the graph will not be saved (default = None) 
