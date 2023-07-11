@@ -29,7 +29,7 @@ data = pd.read_csv(os.getcwd() + '/example/theta_names_estimates.csv')
 data.head()
 ```
 
-|   name_id |   deltas |         s | firstname   |
+|   name_id |   thetas |         s | firstname   |
 |----------:|---------:|----------:|:------------|
 |         1 | 0.53788  | 0.0137214 | Adam        |
 |         2 | 0.518394 | 0.0173332 | Aisha       |
@@ -48,17 +48,17 @@ To estimate the prior, generate an instance of the `prior_estimate` class with e
 
 ```python
 from drrank_distribution import prior_estimate
-deltas = data.deltas.values # set of estimates
+thetas = data.thetas.values # set of estimates
 s = data.s.values # setstandard errors
 
 # Initialize the estimator
-G = prior_estimate(deltas, s, transform=lambda x: np.power(np.sin(x),2))
+G = prior_estimate(thetas, s, transform=lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution 
 G.estimate_prior(support_points=5000, spline_order=5)
 ```
 
-Use the `support_points` option (default=5000) to pick the number of points of support over which to evaluate the prior density. The minimum and maximum of the support are the minimum and maximum of `deltas`. 
+Use the `support_points` option (default=5000) to pick the number of points of support over which to evaluate the prior density. The minimum and maximum of the support are the minimum and maximum of `thetas`. 
 
 Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
 
@@ -70,12 +70,12 @@ The estimated prior distribution will be saved as a dictionary. You can access i
 G.prior_g
 
 # Keys:
-# mean_delta: mean of the prior
-G.prior_g['mean_delta']
-# sd_delta: standard deviation of the prior
-G.prior_g['sd_delta']
-# g_delta: estimated prior density
-G.prior_g['g_delta']
+# mean_theta: mean of the prior
+G.prior_g['mean_theta']
+# sd_theta: standard deviation of the prior
+G.prior_g['sd_theta']
+# g_theta: estimated prior density
+G.prior_g['g_theta']
 ```
 
 You can then graph the results by calling the following function:
@@ -89,7 +89,7 @@ G.plot_estimates(save_path = "example/prior_distribution.jpg")
 ![prior_distribution](example/prior_distribution.jpg)
 
 Within the function you can specify the following arguments:
-- *g_delta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
+- *g_theta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
 - *show_plot*: whether to show the plot or not (default = `True`).
 - *save_path*: path to where the plot will be saved. `None' implies the graph will not be saved (default = `None`).
 
@@ -99,7 +99,7 @@ Once the prior distribution has been estimated, you can estimate posterior means
 
 ```python
 # Compute the posterior features
-G.compute_posteriors(alpha=.05, g_delta=None)
+G.compute_posteriors(alpha=.05, g_theta=None)
 G.pmean # posterior means
 G.pmean_trans # inverse transformed posterior means
 G.lci # lower limit of 1-alpha credible interval
@@ -122,10 +122,10 @@ Then compute the pairwise ordering probabilities $P$ using:
 
 ```python
 # Compute the pairwise ordering probabilities
-pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
+pis = G.compute_pis(g_theta=None, ncores=-1, power=0)
 ```
 
-In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_delta` argument. This density must take support on the values determined by `G.supp_delta`.
+In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_theta` argument. This density must take support on the values determined by `G.supp_theta`.
 
 `compute_pis` also provides the option to compute the elements of $P$, $\pi_{ij}$, as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 

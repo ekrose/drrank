@@ -3,19 +3,19 @@ from scipy.optimize import minimize
 from scipy.stats import norm
 
 
-def minimgap(c, P, Q, alpha_0, options_fmin, supp_delta, sd_ests, mean_ests, vcv_ests):
+def minimgap(c, P, Q, alpha_0, options_fmin, supp_theta, sd_ests, mean_ests, vcv_ests):
     """
     Minmgap estimation of the G prior function
     """
     result = minimize(lambda x: likelihood(x, P, Q, c), alpha_0,
             method='CG', jac=True, options=options_fmin, tol=1e-10)
     alpha_hat = result.x
-    logL, dlogL, g_delta = likelihood(alpha_hat, P, Q, c, optimization=False)
+    logL, dlogL, g_theta = likelihood(alpha_hat, P, Q, c, optimization=False)
 
-    # Report mean and std dev of estimated delta distribution
-    mean_delta = np.sum(supp_delta * g_delta) / np.sum(g_delta)
-    sd_delta = np.sqrt((np.sum((supp_delta ** 2) * g_delta) / np.sum(g_delta)) - mean_delta ** 2)
-    difs = np.array([mean_delta - mean_ests, sd_ests - sd_delta])
+    # Report mean and std dev of estimated theta distribution
+    mean_theta = np.sum(supp_theta * g_theta) / np.sum(g_theta)
+    sd_theta = np.sqrt((np.sum((supp_theta ** 2) * g_theta) / np.sum(g_theta)) - mean_theta ** 2)
+    difs = np.array([mean_theta - mean_ests, sd_ests - sd_theta])
     gap = difs.T @ np.linalg.inv(vcv_ests) @ difs
 
     return gap

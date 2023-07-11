@@ -14,13 +14,13 @@ data.head()
 # 1. Estimate Prior ---------------------------------------------------------------
 
 from drrank_distribution import prior_estimate
-# deltas: set of estimates
+# thetas: set of estimates
 # s: set of standard errors
-deltas = data.deltas.values
+thetas = data.thetas.values
 s = data.s.values
 
 # Initialize the estimator object
-G = prior_estimate(deltas, s, lambda x: np.power(np.sin(x),2))
+G = prior_estimate(thetas, s, lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution G.
 G.estimate_prior(support_points=5000, spline_order=5)
@@ -29,12 +29,12 @@ G.estimate_prior(support_points=5000, spline_order=5)
 G.prior_g
 
 # Keys:
-# mean_delta: mean of the prior
-G.prior_g['mean_delta']
-# sd_delta: std. of the prior
-G.prior_g['sd_delta']
-# g_delta: array of the actual prior G
-G.prior_g['g_delta']
+# mean_theta: mean of the prior
+G.prior_g['mean_theta']
+# sd_theta: std. of the prior
+G.prior_g['sd_theta']
+# g_theta: array of the actual prior G
+G.prior_g['g_theta']
 
 # Plot the estimated prior distribution
 G.plot_estimates(save_path = "example/prior_distribution.jpg")
@@ -42,7 +42,7 @@ G.plot_estimates(save_path = "example/prior_distribution.jpg")
 # 2. Posterior features and Pairwise probabilities --------------------------------
 
 # Compute the posterior features
-G.compute_posteriors(alpha=.05, g_delta=None)
+G.compute_posteriors(alpha=.05, g_theta=None)
 G.pmean # posterior means
 G.pmean_trans # inverse transformed posterior means
 G.lci # lower limit of 1-alpha credible interval
@@ -53,7 +53,7 @@ G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 G.posterior_df.head() # Access everything as a Dataframe
 
 # Compute the pairwise ordering probabilities
-pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
+pis = G.compute_pis(g_theta=None, ncores=-1, power=0)
 
 # 3. DRRank Rankings ------------------------------------------------------------
 

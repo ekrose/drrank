@@ -21,24 +21,24 @@ class prior_estimate():
     Class to estimate both prior and posterior distribution.
     Inputs should be a vector of estimates and standard errors previously calculated.
     Arguments:
-        deltas: vector of estimates
-        s: standard errors of the estimates deltas
+        thetas: vector of estimates
+        s: standard errors of the estimates thetas
         
     """
-    def __init__(self, deltas, s, transform=lambda x: x):
+    def __init__(self, thetas, s, transform=lambda x: x):
 
         # Transform estimates to lists
-        if isinstance(deltas, list):
-            self.deltas = np.asarray([deltas]).T
+        if isinstance(thetas, list):
+            self.thetas = np.asarray([thetas]).T
         else:
-             self.deltas = deltas
+             self.thetas = thetas
         if isinstance(s, list):
             self.s = np.asarray([s]).T 
         else:
              self.s = s
 
         # Get the number of units we are ranking
-        self.F = len(deltas)
+        self.F = len(thetas)
 
         # Inverse of any transform used to variance stabilize estimates
         self.inv_transform = transform
@@ -47,7 +47,7 @@ class prior_estimate():
         """
         Estimate the prior distribution G
         Arguments:
-            supp_points: support points of delta and z-score distributions (default = 5000)
+            supp_points: support points of theta and z-score distributions (default = 5000)
             spline_order: spline order for our prior distribution estimate, 0.45 for cont, 0.49 for disc efron, 0.0116 for poisson, 0.0031 for balanced poisson (default = 5)
             seed: specify seed number
         """
@@ -56,27 +56,27 @@ class prior_estimate():
         self.spline_order = spline_order
 
         # Calculate support of prior
-        supp_delta_min = np.min(self.deltas)
-        supp_delta_max = np.max(self.deltas)
-        supp_delta = np.linspace(supp_delta_min, supp_delta_max, self.supp_points)
-        M = len(supp_delta)
+        supp_theta_min = np.min(self.thetas)
+        supp_theta_max = np.max(self.thetas)
+        supp_theta = np.linspace(supp_theta_min, supp_theta_max, self.supp_points)
+        M = len(supp_theta)
         self.M = M
 
         # Save the support information
-        self.supp_delta_min = supp_delta_min
-        self.supp_delta_max = supp_delta_max
-        self.supp_delta = supp_delta
+        self.supp_theta_min = supp_theta_min
+        self.supp_theta_max = supp_theta_max
+        self.supp_theta = supp_theta
 
         # Calculate P matrix
         s_tilde_big = np.tile(self.s.reshape(-1,1), (1, M))
-        deltas_big = np.tile(self.deltas.reshape(-1,1), (1, M))
-        supp_delta_big = np.tile(supp_delta.reshape(1, M), (self.F, 1))
-        P = (1 / s_tilde_big) * norm.pdf((deltas_big - supp_delta_big) / s_tilde_big)
+        thetas_big = np.tile(self.thetas.reshape(-1,1), (1, M))
+        supp_theta_big = np.tile(supp_theta.reshape(1, M), (self.F, 1))
+        P = (1 / s_tilde_big) * norm.pdf((thetas_big - supp_theta_big) / s_tilde_big)
         self.P = P
 
         # Report mean and std dev of prior
-        mean_ests = np.mean(self.deltas) # Calculate the mean of delta_hat
-        sd_ests = np.sqrt(np.var(self.deltas, ddof=1) - np.mean(self.s**2))
+        mean_ests = np.mean(self.thetas) # Calculate the mean of theta_hat
+        sd_ests = np.sqrt(np.var(self.thetas, ddof=1) - np.mean(self.s**2))
 
         # Save them
         self.mean_ests = mean_ests
@@ -84,15 +84,15 @@ class prior_estimate():
 
         # Estimate the variance-covariance matrix of mean and sd. estimates
         var_mean_ests = np.sum(self.s**2) / self.F**2 
-        var_sd_ests = (2 * np.sum(self.s**4) + 4 * np.sum((self.deltas - mean_ests)**2 - self.s**2)) / self.F**2 
-        covar_mean_sd_ests = -2 / self.F**2 * np.sum(((self.deltas - mean_ests)**2) * self.s**2) 
+        var_sd_ests = (2 * np.sum(self.s**4) + 4 * np.sum((self.thetas - mean_ests)**2 - self.s**2)) / self.F**2 
+        covar_mean_sd_ests = -2 / self.F**2 * np.sum(((self.thetas - mean_ests)**2) * self.s**2) 
         vcv_ests = np.array([[var_mean_ests, covar_mean_sd_ests], [covar_mean_sd_ests, var_sd_ests]]) 
         
         # Save it
         self.vcv_ests = vcv_ests
 
         # Comput the spline bais
-        X = supp_delta.reshape(-1, 1)
+        X = supp_theta.reshape(-1, 1)
         std_spline = 1
 
         # Use R if possible for consistency with Efron, otherwise use Patsy BSpline
@@ -136,7 +136,7 @@ class prior_estimate():
 
         # Minimize and get the correct c
         result = minimize_scalar(lambda x: minimgap(x, P, Q, alpha_0, options_fmin, 
-                                                    supp_delta, sd_ests, mean_ests, 
+                                                    supp_theta, sd_ests, mean_ests, 
                                                     vcv_ests),
                                 bounds=(0, 0.1),
                                 method='bounded',
@@ -144,7 +144,7 @@ class prior_estimate():
                                          'xatol':1e-10})
         c = result.x
         if minimgap(0, P, Q, alpha_0, options_fmin, 
-                    supp_delta, sd_ests, mean_ests, 
+                    supp_theta, sd_ests, mean_ests, 
                      vcv_ests) < result.fun:
             c = 0
             print("Unpenalized likelihood provides best fit, setting penalty = 0")
@@ -165,37 +165,37 @@ class prior_estimate():
             print("Warning: likelihood may not have converged")
             print("Jacobian squared norm: {}".format(np.sum(np.power(result.jac,2))))
 
-        # Get the estimated g_deltas
-        logL, dlogL, g_delta = likelihood(alpha_hat, P, Q, c, optimization = False)
+        # Get the estimated g_thetas
+        logL, dlogL, g_theta = likelihood(alpha_hat, P, Q, c, optimization = False)
 
-        # Report mean and std dev of estimated delta distribution
-        mean_delta = np.sum(supp_delta * g_delta) / np.sum(g_delta)
-        sd_delta = np.sqrt((np.sum((supp_delta ** 2) * g_delta) / np.sum(g_delta)) - mean_delta ** 2)
+        # Report mean and std dev of estimated theta distribution
+        mean_theta = np.sum(supp_theta * g_theta) / np.sum(g_theta)
+        sd_theta = np.sqrt((np.sum((supp_theta ** 2) * g_theta) / np.sum(g_theta)) - mean_theta ** 2)
 
         # Print results
         print(f"\nEstimated mean: {mean_ests:4f}")
         print(f"Estimated standard deviation: {sd_ests:4f}")
-        print(f"Prior mean: {mean_delta:4f}")
-        print(f"Prior standard deviation: {sd_delta:4f}")
+        print(f"Prior mean: {mean_theta:4f}")
+        print(f"Prior standard deviation: {sd_theta:4f}")
 
         # Rescale g to sum to one
-        g_delta = g_delta / np.sum(g_delta)
+        g_theta = g_theta / np.sum(g_theta)
 
         # Save the estimates
-        self.prior_g = {'mean_delta': mean_delta, 'sd_delta': sd_delta, 'g_delta': g_delta}
+        self.prior_g = {'mean_theta': mean_theta, 'sd_theta': sd_theta, 'g_theta': g_theta}
 
-    def plot_estimates(self, g_delta=None, show_plot=True, save_path=None):
+    def plot_estimates(self, g_theta=None, show_plot=True, save_path=None):
         """
         Function to plot an histogram of the estimates
         Arguments:
-            g_delta: provide your own estimates of the prior distribution
+            g_theta: provide your own estimates of the prior distribution
             show_plot: set to True to display the plot
             save_path: specify the path to save the plot, set to None to avoid saving it
         """
 
-        if g_delta == None:
+        if g_theta == None:
             try:
-                g_delta = self.prior_g['g_delta']
+                g_theta = self.prior_g['g_theta']
             except:
                 raise ValueError("Prior distribution was not estimated, cannot proceed to compute the posteriors")
         else:
@@ -203,27 +203,27 @@ class prior_estimate():
                 
 
         # Get the estimated prior_g
-        g_delta = self.prior_g['g_delta']
+        g_theta = self.prior_g['g_theta']
 
         # Scale to match histogram
-        g_delta = g_delta/max(g_delta)/3
-        support = self.supp_delta.copy()
-        deltas = self.deltas.copy()
+        g_theta = g_theta/max(g_theta)/3
+        support = self.supp_theta.copy()
+        thetas = self.thetas.copy()
 
         # Calculate the limits of our plot
         x_min = min(support)*0.99
         x_max = max(support)*1.01
-        y_lim = min([round(max(g_delta),1)+0.2, 1])
+        y_lim = min([round(max(g_theta),1)+0.2, 1])
 
         # Plot the distribution
         fig, ax = plt.subplots(figsize=(15, 10))
-        sns.histplot(data = deltas, 
+        sns.histplot(data = thetas, 
                     line_kws = {'alpha': 0.6}, kde = False,
                     binwidth = 0.0025,
                     stat = 'probability',
                     fill = True,
                     alpha = 0.3, common_norm = False, ax = ax)
-        sns.lineplot(x = support, y = g_delta, color = 'red')
+        sns.lineplot(x = support, y = g_theta, color = 'red')
         sns.despine()
         plt.ylabel('Scaled density / mass', fontsize = 25)
         plt.xlabel(r'$\theta$', fontsize = 25)
@@ -234,7 +234,7 @@ class prior_estimate():
         ax.set_axisbelow(True)
         ax.yaxis.grid(color='gray', alpha = 0.2)
         ax.text(x_max, y_lim*0.84, "Bias-corrected SD: {:4.4f}\nDecon. implied SD: {:4.4f}\nMean: {:4.4f}\nDecon. implied mean: {:4.4f}".format(
-            self.sd_ests, self.prior_g['sd_delta'], self.mean_ests, self.prior_g['mean_delta']), fontsize = 20, horizontalalignment = 'right')
+            self.sd_ests, self.prior_g['sd_theta'], self.mean_ests, self.prior_g['mean_theta']), fontsize = 20, horizontalalignment = 'right')
 
         if save_path != None:
             plt.tight_layout()
@@ -243,33 +243,33 @@ class prior_estimate():
         if show_plot:
             plt.show()
 
-    def compute_posterior_distributions(self, g_delta=None):
+    def compute_posterior_distributions(self, g_theta=None):
         # Decide which prior density to use
-        if g_delta == None:
+        if g_theta == None:
             try:
-                g_delta = self.prior_g['g_delta']
+                g_theta = self.prior_g['g_theta']
             except:
                 raise ValueError("Prior distribution was not estimated, cannot proceed to compute the posteriors")
         else:
             print("Using user-supplied prior distribution")
 
         # Compute posterior distribution for each estimate
-        post_dist = ((1 / self.s) * norm.pdf((self.deltas - self.supp_delta[:,np.newaxis]) / self.s)) * g_delta[:,np.newaxis]
+        post_dist = ((1 / self.s) * norm.pdf((self.thetas - self.supp_theta[:,np.newaxis]) / self.s)) * g_theta[:,np.newaxis]
         post_dist = post_dist / np.sum(post_dist,0)
 
         self.post_dist = post_dist
 
-    def posterior_features(self, g_delta, alpha=.05):
+    def posterior_features(self, g_theta, alpha=.05):
         # Estimate posterior if necessary
         if self.post_dist is None:
-            self.compute_posterior_distributions(g_delta)
+            self.compute_posterior_distributions(g_theta)
 
         # Compute posterior features
-        self.pmean = self.supp_delta.dot(self.post_dist)
-        self.pmean_trans = self.inv_transform(self.supp_delta).dot(self.post_dist)
+        self.pmean = self.supp_theta.dot(self.post_dist)
+        self.pmean_trans = self.inv_transform(self.supp_theta).dot(self.post_dist)
 
-        self.lci = self.supp_delta[np.argmin(np.cumsum(self.post_dist,0) <= alpha/2,0)]
-        self.uci = self.supp_delta[np.argmin(np.cumsum(self.post_dist,0) <= 1-alpha/2,0)]
+        self.lci = self.supp_theta[np.argmin(np.cumsum(self.post_dist,0) <= alpha/2,0)]
+        self.uci = self.supp_theta[np.argmin(np.cumsum(self.post_dist,0) <= 1-alpha/2,0)]
 
         self.lci_trans = self.inv_transform(self.lci)
         self.uci_trans = self.inv_transform(self.uci)
@@ -283,14 +283,14 @@ class prior_estimate():
             'uci_trans': self.uci_trans
         })
     
-    def compute_posteriors(self, alpha=.05, g_delta=None):
+    def compute_posteriors(self, alpha=.05, g_theta=None):
         # Get posterior distributions
-        self.compute_posterior_distributions(g_delta)
+        self.compute_posterior_distributions(g_theta)
 
         # Get posterior features
-        self.posterior_features(g_delta, alpha)
+        self.posterior_features(g_theta, alpha)
 
-    def compute_pis(self, g_delta=None, ncores=-1, power=0):
+    def compute_pis(self, g_theta=None, ncores=-1, power=0):
         """
         Estimate pairwise loss compoments. When power=0, these are
         simply Prob(unit_i > unit_j | Y, G). When power > 0, these are
@@ -298,7 +298,7 @@ class prior_estimate():
         functions that weight ranking loss by powers of the cardinal
         difference between i and j.
         Arguments:
-            g_delta: if a different estimation of the prior has been used, supply it through g_delta, default is None, i.e. use the estimates from estimates_prior()
+            g_theta: if a different estimation of the prior has been used, supply it through g_theta, default is None, i.e. use the estimates from estimates_prior()
             ncores: how many CPUs for parallel processing, default is all CPUs available (ncores = -1)
             power: cardinal weights. Set to zero (default) for pairwise posterior ordering probabilities
                 Set to 1 for absolute error weighted loss. Set to 2 for square-weighted loss.
@@ -310,13 +310,13 @@ class prior_estimate():
 
         # Estimate posterior if necessary
         if self.post_dist is None:
-            self.compute_posterior_distributions(g_delta)
+            self.compute_posterior_distributions(g_theta)
 
         # Integrand
-        gaps = (np.greater.outer(self.supp_delta, self.supp_delta) 
+        gaps = (np.greater.outer(self.supp_theta, self.supp_theta) 
                 * (np.subtract.outer(
-                        self.inv_transform(self.supp_delta),
-                        self.inv_transform(self.supp_delta)) ** power))
+                        self.inv_transform(self.supp_theta),
+                        self.inv_transform(self.supp_theta)) ** power))
 
         # If ncores is -1, use all CPUs
         if ncores == -1:
