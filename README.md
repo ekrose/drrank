@@ -55,10 +55,10 @@ s = data.s.values # setstandard errors
 G = prior_estimate(thetas, s, transform=lambda x: np.power(np.sin(x),2))
 
 # Estimate the prior distribution 
-G.estimate_prior(support_points=5000, spline_order=5)
+G.estimate_prior(supp_points=5000, spline_order=5)
 ```
 
-Use the `support_points` option (default=5000) to pick the number of points of support over which to evaluate the prior density. The minimum and maximum of the support are the minimum and maximum of `thetas`. 
+Use the `supp_points` option (default=5000) to pick the number of points of support over which to evaluate the prior density. The minimum and maximum of the support are the minimum and maximum of `thetas`. 
 
 Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
 
