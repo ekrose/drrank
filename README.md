@@ -42,21 +42,19 @@ While **DRrank** provides the functionality to account for any variance-stabiliz
 
 ### 2. Estimating the prior
 
- **DRrank** provides functionality to estimate a prior distribution with a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses flexible exponential family mixing distribution model with density parameterized by a flexible B-th order natural spline. 
+ **DRrank** provides the functionality to estimate a prior distribution using a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses an exponential family mixing distribution with density parameterized by a flexible B-th order natural  cubic spline. 
 
-To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent paramater, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$.
-
-To estimate the prior, feed `prior_estimate` an array of $\hat{\theta}_i$ and standard errors.
+To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent attribute, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$. The inverse transform function should be vectorized.
 
 ```python
 from drrank_distribution import prior_estimate
 deltas = data.deltas.values # set of estimates
 s = data.s.values # setstandard errors
 
-# Initialize the estimator object
+# Initialize the estimator
 G = prior_estimate(deltas, s, transform=lambda x: np.power(np.sin(x),2))
 
-# Estimate the prior distribution G 
+# Estimate the prior distribution 
 G.estimate_prior(support_points=5000, spline_order=5)
 ```
 
@@ -64,7 +62,7 @@ Use the `support_points` option (default=5000) to pick the number of points of s
 
 Use the `spline_order` option (default=5) to adjust the degrees of freedom of the spline that parameterizes the mixing distribution.
 
-The estimated prior distribution will be saved as a dictionary, you can access it with the following code:
+The estimated prior distribution will be saved as a dictionary. You can access it with the following code:
 
 ```python
 
@@ -74,9 +72,9 @@ G.prior_g
 # Keys:
 # mean_delta: mean of the prior
 G.prior_g['mean_delta']
-# sd_delta: std. of the prior
+# sd_delta: standard deviation of the prior
 G.prior_g['sd_delta']
-# g_delta: array of the actual prior G
+# g_delta: estimated prior density
 G.prior_g['g_delta']
 ```
 
@@ -91,13 +89,13 @@ G.plot_estimates(save_path = "example/prior_distribution.jpg")
 ![prior_distribution](example/prior_distribution.jpg)
 
 Within the function you can specify the following arguments:
-- *g_delta*: provide your own prior distribution G, None implies the function will utilize the estimated G from the *estimate_prior()* method (default = None)
-- *show_plot*: whether to show the plot or not (default = True)
-- *save_path*: path to where the plot will be saved, None implies the graph will not be saved (default = None) 
+- *g_delta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
+- *show_plot*: whether to show the plot or not (default = `True`).
+- *save_path*: path to where the plot will be saved. `None' implies the graph will not be saved (default = `None`).
 
 ### 3. Estimation of posterior features and $P$ matrix
 
-Once the prior distribution $G$ has been estimated, you can estimate posterior means and credible intervals, as well as the matrix of pairwise ordering probabilities $\pi_{ij}$.
+Once the prior distribution has been estimated, you can estimate posterior means and credible intervals, as well as the matrix of pairwise posterior ordering probabilities $P$.
 
 ```python
 # Compute the posterior features
@@ -120,7 +118,7 @@ G.posterior_df.head() # Dataframe of posterior features
 |  3 | 0.521341 |      0.248065 | 0.498887 | 0.529003 |    0.228913 |    0.254695 |
 |  4 | 0.521891 |      0.248537 | 0.502037 | 0.529244 |    0.231565 |    0.254905 |
 
-Then compute the pairwise ordering probabilities $\pi_{ij}$:
+Then compute the pairwise ordering probabilities $P$ using:
 
 ```python
 # Compute the pairwise ordering probabilities
@@ -129,7 +127,7 @@ pis = G.compute_pis(g_delta=None, ncores=-1, power=0)
 
 In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_delta` argument. This density must take support on the values determined by `G.supp_delta`.
 
-`compute_pis` also provides the option to compute $\pi_{ij}$ as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
+`compute_pis` also provides the option to compute the elements of $P$, $\pi_{ij}$, as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
 ### 4. Estimate rankings
 
