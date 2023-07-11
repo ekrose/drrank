@@ -417,7 +417,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
                         )]
 
     plt.grid(axis='y', alpha=0.35, linewidth=0.3)
-    plt.legend(mean_lines,labels, loc='lower right', markerscale=1, bbox_to_anchor=(0,1))
+    plt.legend(mean_lines,labels, loc='lower right', markerscale=1)
     if ylabels != None:
         plt.yticks(y_range, df_plot[ylabels], fontsize=4)    
     else:
