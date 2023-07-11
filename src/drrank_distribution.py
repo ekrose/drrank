@@ -161,6 +161,7 @@ class prior_estimate():
                         method='CG', jac=True, 
                         options=options_fmin, tol=1e-10)
         alpha_hat = result.x
+        print("Likelihood: {:5.4f}".format(result.fun))
         if result.success != True:
             print("Warning: likelihood may not have converged")
             print("Jacobian squared norm: {}".format(np.sum(np.power(result.jac,2))))
