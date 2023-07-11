@@ -122,7 +122,7 @@ results = fit(p_ij, lamb = None, DR = 0.05)
 ```
 
 
-Finally, we provide a functionality to plot the results of both the posterior features estimates and the rankings:
+Finally, we provide functionality to plot grades along with posterior means and credible intervals:
 
 ```python
 from drrank import fig_ranks
