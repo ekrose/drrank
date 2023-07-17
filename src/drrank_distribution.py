@@ -149,6 +149,11 @@ class prior_estimate():
             c = 0
             print("Unpenalized likelihood provides best fit, setting penalty = 0")
 
+        for c in range(100):
+            print(minimgap(c/1000, P, Q, alpha_0, options_fmin, 
+                    supp_theta, sd_ests, mean_ests, 
+                     vcv_ests))
+
         # Check if the minimization was successful
         if result.success != True:
             raise AssertionError("Optimization was unsuccessful")
