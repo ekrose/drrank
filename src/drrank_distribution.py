@@ -143,17 +143,11 @@ class prior_estimate():
                                 options={'maxiter':10000,
                                          'xatol':1e-12})
         c = result.x
-        if (minimgap(0, P, Q, alpha_0, options_fmin, 
-                    supp_theta, sd_ests, mean_ests, 
-                     vcv_ests) < result.fun):
-            c = 0
-            print("Unpenalized likelihood provides best fit, setting penalty = 0")
-
         # Check if the minimization was successful
         if result.success != True:
             raise AssertionError("Optimization was unsuccessful")
 
-        print(f"Using df {self.spline_order} and penalty {c:.5f}")
+        print(f"Using df {self.spline_order} and penalty {c:.8f}")
         
         # minimize and solve our likelihood function
         print("\nOptimizing likelihood...")
@@ -239,7 +233,7 @@ class prior_estimate():
 
         if save_path != None:
             plt.tight_layout()
-            plt.savefig(save_path, format='pdf', dpi=300)
+            plt.savefig(save_path, format='jpg', dpi=300)
 
         if show_plot:
             plt.show()

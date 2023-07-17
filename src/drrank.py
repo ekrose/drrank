@@ -429,7 +429,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
 
     if save_path != None:
         plt.tight_layout()
-        plt.savefig(save_path, format='pdf', dpi=300)
+        plt.savefig(save_path, format='jpg', dpi=300)
         print("Figure saved!")
 
     if show_plot:
