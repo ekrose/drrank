@@ -140,8 +140,8 @@ class prior_estimate():
                                                     vcv_ests),
                                 bounds=(0, 0.1),
                                 method='bounded',
-                                options={'maxiter':10000,
-                                         'xatol':1e-12})
+                                options={'maxiter':500,
+                                         'xatol':1e-4})
         c = result.x
 
         # Check if the minimization was successful
