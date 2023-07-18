@@ -86,7 +86,7 @@ You can then graph the results by calling the following function:
 G.plot_estimates(save_path = "example/prior_distribution.jpg")
 ```
 
-![prior_distribution](https://github.com/ekrose/drrank/blob/estimate_pis/example/prior_distribution.jpg?raw=true)
+![prior_distribution](https://github.com/ekrose/drrank/blob/main/example/prior_distribution.jpg?raw=true)
 
 Within the function you can specify the following arguments:
 - *g_theta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
@@ -190,7 +190,7 @@ results['firstname'] = data.firstname
 fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')
 ```
 
-![name_ranking](https://github.com/ekrose/drrank/blob/estimate_pis/example/name_ranking.jpg?raw=true)
+![name_ranking](https://github.com/ekrose/drrank/blob/main/example/name_ranking.jpg?raw=true)
 
 Within the function you can specify the following arguments:
 - *results*: ranking results from *drrank.fit*
