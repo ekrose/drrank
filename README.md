@@ -25,7 +25,7 @@ To illustrate the package's features, this readme uses the data in *example/name
 import pandas as pd
 
 # Read in the data
-data = pd.read_csv(os.getcwd() + '/example/theta_names_estimates.csv')
+data = pd.read_csv(os.getcwd() + '/example/name_example.csv')
 data.head()
 ```
 
@@ -147,11 +147,8 @@ First, one can supply a parameter $\lambda \in [0,1]$, which corresponds to the 
 from drrank import fit
 from simul_pij import simul_data
 
-# Simulate data
-p_ij = simul_data(size = 25)
-
 # Fit the report card function
-results = fit(p_ij, lamb = 0.25, DR = None)
+results = fit(pis, lamb = 0.25, DR = None)
 ```
 
 The results ojbect contains the row index of $P$, the assigned grades, and the Condorcet rank (i.e., grade under $\lambda=1$). 
