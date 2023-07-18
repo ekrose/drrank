@@ -44,7 +44,7 @@ While **DRrank** provides the functionality to account for any variance-stabiliz
 
  **DRrank** provides the functionality to estimate a prior distribution using a variation on Efron (2016)'s [log-spline deconvolution](https://academic.oup.com/biomet/article-abstract/103/1/1/2390141?redirectedFrom=fulltext) approach, which uses an exponential family mixing distribution with density parameterized by a flexible B-th order natural  cubic spline. 
 
-To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent attribute, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilizes variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$. The inverse transform function should be vectorized.
+To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent attribute, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilize variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$. The inverse transform function should be vectorized.
 
 ```python
 from drrank_distribution import prior_estimate
@@ -127,7 +127,7 @@ pis = G.compute_pis(g_theta=None, ncores=-1, power=0)
 
 In both functions, it is possible to provide your own prior distribution G by feeding an array as the `g_theta` argument. This density must take support on the values determined by `G.supp_theta`.
 
-`compute_pis` also provides the option to compute the elements of $P$, $\pi_{ij}$, as the posterior expectation of $max(\theta_i - \theta_j,0)^power$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
+`compute_pis` also provides the option to compute the elements of $P$, $\pi_{ij}$, as the posterior expectation of $max(\theta_i - \theta_j,0)^{power}$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
 ### 4. Estimate rankings
 
@@ -151,7 +151,7 @@ from simul_pij import simul_data
 results = fit(pis, lamb = 0.25, DR = None)
 ```
 
-The results ojbect contains the row index of $P$, the assigned grades, and the Condorcet rank (i.e., grade under $\lambda=1$). 
+The results object contains the row index of $P$, the assigned grades, and the Condorcet rank (i.e., grade under $\lambda=1$). 
 
 |   obs_idx |   grades_lamb0.25 |   condorcet_rank |
 |----------:|------------------:|-----------------:|
