@@ -19,7 +19,7 @@ pip install drrank
 
 **DRrank** grades units based on noisy estimates of a latent attribute. You can construct these estimates however you'd like---all **DRrank** requires is a vector of estimates, $\hat{\theta}_i$, and their associated standard errors, $s_i$.
 
-To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. In cases where variance stabilization is not possible, independence can sometimes be restored by residualizing $\hat{\theta_i}$ against $s_i$; see Section 5 of [Kline, Rose, and Walters (2023)](https://arxiv.org/abs/2306.13005) for a detailed example. The transformation used computes estimates as $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
+To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. In cases where variance stabilization is not possible, independence can sometimes be restored by residualizing $\hat{\theta_i}$ against $s_i$; see Section 5 of [Kline, Rose, and Walters (2023)](https://arxiv.org/abs/2306.13005) for a detailed example. The transformation used in our names example computes estimates as $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
 
 ```python
 import pandas as pd
@@ -129,7 +129,7 @@ In both functions, it is possible to provide your own prior distribution G by fe
 
 `compute_pis` also provides the option to compute the elements of $P$, $\pi_{ij}$, as the posterior expectation of $max(\theta_i - \theta_j,0)^{power}$, providing an extension to weighted ranking exercises. The default, $power=0$, will produce $\pi_{ij}$ that are posterior ordering probabilities discussed in the next section and implies that ranking mistakes a considered equally costly regardless of the cardinal difference between $\theta_i$ and $\theta_j$.
 
-### 4. Estimate rankings
+### 4. Computing grades
 
 To compute rankings, use the **fit** function with a matrix $P$. In the unweighted case, $P$ reflects the posterior probabilities that observation i's latent measure $\theta_i$ exceeds unit j's. That is, each element of this matrix takes the form:
 
