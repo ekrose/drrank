@@ -91,7 +91,7 @@ G.plot_estimates(save_path = "example/prior_distribution.jpg")
 Within the function you can specify the following arguments:
 - *g_theta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
 - *show_plot*: whether to show the plot or not (default = `True`).
-- *save_path*: path to where the plot will be saved. `None' implies the graph will not be saved (default = `None`).
+- *save_path*: path to where the plot will be saved. `None` implies the graph will not be saved (default = `None`).
 
 ### 3. Estimation of posterior features and $P$ matrix
 
@@ -194,6 +194,6 @@ fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'fir
 Within the function you can specify the following arguments:
 - *results*: ranking results from *drrank.fit*
 - *posterior_features*: posterior features computed through *G.compute_posteriors()*
-- *ylabels*: optional, specify the column in *results* where we have stored the labels of each observation (default = None)
-- *show_plot*: whether to show the plot or not (default = True)
-- *save_path*: path to where the plot will be saved; None implies the graph will not be saved (default = None) 
+- *ylabels*: optional, specify the column in *results* where we have stored the labels of each observation (default = `None`)
+- *show_plot*: whether to show the plot or not (default = `True`)
+- *save_path*: path to where the plot will be saved; `None` implies the graph will not be saved (default = `None`) 

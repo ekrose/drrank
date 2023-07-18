@@ -6,7 +6,6 @@ import numpy as np
 
 # 0. Import the data --------------------------------------------------------------
 
-
 # Read in the data
 data = pd.read_csv(os.getcwd() + '/example/name_example.csv')
 data.head()
@@ -58,25 +57,20 @@ pis = G.compute_pis(g_theta=None, ncores=-1, power=0)
 # 3. DRRank Rankings ------------------------------------------------------------
 
 from drrank import fit
-from simul_pij import simul_data
-
-# Simulate data
-p_ij = simul_data(size = 25)
 
 # Fit the report card function
-results = fit(p_ij, lamb = 0.25, DR = None)
+results = fit(pis, lamb = 0.25, DR = None)
 
 import numpy as np
 from drrank import fit_multiple
 
 # Try different values of Lambda
-results_l = fit_multiple(p_ij, np.arange(0, 0.9, 0.01))
+results_l = fit_multiple(pis, np.arange(0, 0.9, 0.01))
 
 # Fit the report card function
-results_dr = fit(p_ij, lamb = None, DR = 0.05)
+results_dr = fit(pis, lamb = None, DR = 0.05)
 
 # Plot the results
-
 from drrank import fig_ranks
 
 # Merge the results with the identity of our observations
