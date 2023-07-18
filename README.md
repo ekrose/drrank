@@ -19,7 +19,7 @@ pip install drrank
 
 **DRrank** grades units based on noisy estimates of a latent attribute. You can construct these estimates however you'd like---all **DRrank** requires is a vector of estimates, $\hat{\theta}_i$, and their associated standard errors, $s_i$.
 
-To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. The transformation used computes estimates as $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $\hat{\theta}_i$ is $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
+To illustrate the package's features, this readme uses the data in *example/name_example.csv*, which contains estimates of name-specific contact rates from the experiment studied in Kline, Rose, and Walters (2023). These contact rates have been adjusted to stabilize their variances using the Bartlett (1936) transformation. Variance-stabilization is useful because the deconvolution procedure used in Step 2 below requires that $s_i$ be independent of $\theta_i$. In cases where variance stabilization is not possible, independence can sometimes be restored by residualizing $\hat{\theta_i}$ against $s_i$; see Section 5 of [Kline, Rose, and Walters (2023)]((https://arxiv.org/abs/2306.13005)) for a detailed example. The transformation used computes estimates as $\hat{\theta}_i = sin^{-1} \sqrt{\hat{p}_i}$, where $\hat{p}_i$ is share of applications with name $i$ that received a callback. As discussed in the paper, $\hat{\theta}_i$ has asymptotic variance of $(4N_i)^{-1}$, where $N_i$ is the number of applications sent with name $i$.
 
 ```python
 import pandas as pd
@@ -38,7 +38,7 @@ data.head()
 |         5 | 0.534998 | 0.0136503 | Amy         |
 
 
-While **DRrank** provides the functionality to account for any variance-stabilizing transformations, using one is not strictly necessary. **DRrank** can also accomodate cases where the $\hat{\theta}_i$ directly capture untransformed estimates of the relevant latent attribute.
+While **DRrank** provides the functionality to account for any variance-stabilizing transformation, using one is not strictly necessary. **DRrank** can also accomodate cases where the $\hat{\theta}_i$ directly capture untransformed estimates of the relevant latent attribute.
 
 ### 2. Estimating the prior
 
