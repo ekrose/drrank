@@ -196,4 +196,4 @@ Within the function you can specify the following arguments:
 - *posterior_features*: posterior features computed through *G.compute_posteriors()*
 - *ylabels*: optional, specify the column in *results* where we have stored the labels of each observation (default = None)
 - *show_plot*: whether to show the plot or not (default = True)
-- *save_path*: path to where the plot will be saved, None implies the graph will not be saved (default = None) 
+- *save_path*: path to where the plot will be saved; None implies the graph will not be saved (default = None) 
