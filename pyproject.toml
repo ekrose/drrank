@@ -30,11 +30,9 @@ dependencies = [
 "joblib>=1.1.0",
 "patsy>=0.5.2"
 "matplotlib",
-"seaborn"
+"seaborn",
+"rpy2>=3.5.13"
 ]
-
-[project.optional-dependencies]
-RPy = ["rpy2>=3.5.13"]
 
 [project.urls]
 "Homepage" = "https://github.com/ekrose/drrank"
