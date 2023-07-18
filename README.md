@@ -133,6 +133,7 @@ In both functions, it is possible to provide your own prior distribution G by fe
 
 To compute rankings, use the **fit** function with a matrix $P$. In the unweighted case, $P$ reflects the posterior probabilities that observation i's latent measure $\theta_i$ exceeds unit j's. That is, each element of this matrix takes the form:
 
+
 $\pi_{ij} = Pr(\theta_i > \theta_j | Y_i = y_i, Y_j = y_j)$
 
 **DRrank** expects these probabilities to satisfy $\pi_{ij} = 1-\pi_{ji}$ and will report a warning if that does not appear to be the case.
