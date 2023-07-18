@@ -86,7 +86,7 @@ You can then graph the results by calling the following function:
 G.plot_estimates(save_path = "example/prior_distribution.jpg")
 ```
 
-![prior_distribution](example/prior_distribution.jpg)
+![prior_distribution](https://github.com/ekrose/drrank/blob/estimate_pis/example/prior_distribution.jpg?raw=true)
 
 Within the function you can specify the following arguments:
 - *g_theta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
@@ -110,13 +110,13 @@ G.uci_trans # upper limit of inverse transformed 1-alpha credible interval
 G.posterior_df.head() # Dataframe of posterior features
 ```
 
-|    |    pmean |   pmean_trans |      lci |      uci |   lci_trans |   uci_trans |
+|    |    pmean |   pmean_trans |      lci |      uci |   lci_trans |    uci_trans|
 |---:|---------:|--------------:|---------:|---------:|------------:|------------:|
-|  0 | 0.522254 |      0.248849 | 0.511952 | 0.529469 |    0.239983 |    0.255101 |
-|  1 | 0.515227 |      0.242848 | 0.494757 | 0.527798 |    0.225452 |    0.253645 |
-|  2 | 0.520531 |      0.247375 | 0.496991 | 0.529019 |    0.227322 |    0.254709 |
-|  3 | 0.521341 |      0.248065 | 0.498887 | 0.529003 |    0.228913 |    0.254695 |
-|  4 | 0.521891 |      0.248537 | 0.502037 | 0.529244 |    0.231565 |    0.254905 |
+|  0 | 0.522524 |      0.249088 | 0.50771  | 0.532169 |    0.236368 |    0.257458 |
+|  1 | 0.515032 |      0.242678 | 0.493166 | 0.529646 |    0.224124 |    0.255255 |
+|  2 | 0.52051  |      0.247361 | 0.497425 | 0.531542 |    0.227686 |    0.25691  |
+|  3 | 0.521265 |      0.248005 | 0.500928 | 0.531446 |    0.23063  |    0.256826 |
+|  4 | 0.521993 |      0.248631 | 0.50456  | 0.531815 |    0.233697 |    0.257149 |
 
 Then compute the pairwise ordering probabilities $P$ using:
 
@@ -155,11 +155,11 @@ The results object contains the row index of $P$, the assigned grades, and the C
 
 |   obs_idx |   grades_lamb0.25 |   condorcet_rank |
 |----------:|------------------:|-----------------:|
-|         1 |                 1 |                5 |
-|         2 |                 1 |                2 |
-|         3 |                 1 |               13 |
-|         4 |                 1 |                4 |
-|         5 |                 1 |                9 |
+|         1 |                 1 |                3 |
+|         2 |                 1 |               32 |
+|         3 |                 1 |               12 |
+|         4 |                 1 |                9 |
+|         5 |                 1 |                5 |
 
 We also provide functionality to compute results for a list of values of $\lambda$ in parallel:
 
@@ -189,7 +189,7 @@ results['firstname'] = data.firstname
 fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')
 ```
 
-![name_ranking](example/name_ranking.jpg)
+![name_ranking](https://github.com/ekrose/drrank/blob/estimate_pis/example/name_ranking.jpg?raw=true)
 
 Within the function you can specify the following arguments:
 - *results*: ranking results from *drrank.fit*
