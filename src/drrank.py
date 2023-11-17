@@ -91,49 +91,43 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         
         # control variables
         Dij = model.addVars(i_j, vtype=GRB.BINARY, name="Dij")
-        Eij = model.addVars(i_j, vtype=GRB.BINARY, name="Eij")
 
         if lamb is not None:
-            loss = (1-lamb)*dp(i_j, Pij, Dij, Eij) - lamb*tau(i_j, Pij, Dij, Eij)
+            loss = (1-lamb)*dp(i_j, Pij, Dij) - lamb*tau(i_j, Pij, Dij)
         elif DR is not None:
-            loss = -tau(i_j, Pij, Dij, Eij)
+            loss = -tau(i_j, Pij, Dij)
         else:
             raise AssertionError("Must supply either lambda or DR.")
 
         model.setObjective(loss, GRB.MINIMIZE)
 
-        # Add constraints to force transitivity
+        # Add constraints        
         model.addConstrs(
-            (Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
-             range(1, n_obs)
-             if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            (Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1
+                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
             name="SST1")
-        model.update()
 
         model.addConstrs(
-            (Dij[(i, k)] + (1 - Dij[(j, k)]) - Dij[(i, j)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
-             range(1, n_obs) if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            (Dij[(i, k)] - Dij[(i, j)] - Dij[(j, k)] <= 0
+                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
             name="SST2")
-        model.update()
 
         model.addConstrs(
-            (Eij[(i, j)] + Eij[(j, k)] - Eij[(i, k)] <= 1 for k in range(1, n_obs) for j in range(1, n_obs) for i in
-             range(1, n_obs)
-             if ((i, j) in i_j) & ((j, k) in i_j) & ((i, k) in i_j) & (i != j) & (i != k) & (j != k)),
+            (Dij[(i, k)] + Dij[(k, i)] - Dij[(i, j)] - Dij[(j, i)] -  Dij[(j, k)] -  Dij[(k, j)] <= 0
+                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
             name="SST3")
-        model.update()
 
-        model.addConstrs((Eij[(i,j)] + Dij[(i,j)] + Dij[(j,i)] == 1 for j in range(1, n_obs) for i in range(1, n_obs)),
-                         name="logic1")
-        model.update()
-        model.addConstrs((Eij[(i, i)] == 1 for i in range(1, n_obs)),
-                         name="logic2")
+        model.addConstrs(
+            (Dij[(i, j)] + Dij[(j, i)] <= 1
+                for j in range(1, n_firms) for i in range(1, n_firms)),
+            name="SST4")
+
         model.update()
 
         # DR constraint, if necessary
         if DR is not None:
             npairs = np.sum(Pij.values())
-            model.addConstr(dp(i_j, Pij, Dij, Eij) <= DR*npairs)
+            model.addConstr(dp(i_j, Pij, Dij) <= DR*npairs)
         model.update()
 
         # First optimize() if call fails - need to set NonConvex to 2
@@ -159,31 +153,10 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
 
         ## get results
         D_ij_hat = model.getAttr('x', Dij)
-        E_ij_ij_hat = model.getAttr('x', Eij)
 
         data_items = D_ij_hat.items()
         data_list = list(data_items)
         df = pd.DataFrame(data_list, columns=['i_j', 'D_ij'])
-
-        data_items = E_ij_ij_hat.items()
-        data_list = list(data_items)
-        df2 = pd.DataFrame(data_list, columns=['i_j', 'E_ij'])
-
-        df = df.merge(df2, on='i_j', how='outer', validate="1:1", indicator=True)
-        df.drop(columns=['_merge'], inplace=True)
-
-        ## check violations
-        df['D_ij'] = df['D_ij'].round(2)
-        df['E_ij'] = df['E_ij'].round(2)
-        df['sum'] = df['D_ij'] + df['E_ij']
-
-        if df['sum'].max()>1.000000000002:
-            raise AssertionError("Violation of transitivity constraints")
-
-        df['D_ji'] = ((df['D_ij'] == 0) & (df['E_ij'] == 0)).astype(int)
-        df['lambda'] = lamb
-
-        df[['i', 'j']] = pd.DataFrame(df2['i_j'].tolist(), index=df.index)
 
         # For debugging save for later
         if save_controls==True:
@@ -193,9 +166,13 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
             print("Saving estimates in {}/df_aux_{}_{}.csv for debugging purposes".format(save_dir,lamb, save_name))
             df.to_csv("{}/df_aux_{}_{}.csv".format(save_dir,lamb, save_name), index = False)
 
-        ## get the implied groups!
+        # Get groups
         print("Getting the implied groups...")
-        df_groups = get_groups(df)
+        df['obs_idx'] = df.i_j.apply(lambda x: x[0])
+        df_groups = df.groupby('obs_idx').D_ij.sum().to_frame()
+        df_groups['groups'] = firm_groups.D_ij.rank(
+                method='dense', ascending=False)
+
         if lamb is not None:
             df_groups.rename(columns={'groups': 'grades_lamb{}'.format(lamb)}, inplace=True)
         elif DR is not None:
@@ -203,87 +180,6 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
 
         return df_groups
     
-
-## Function to get groups from ranking output 
-def get_groups(df):
-    """
-    From the estimated ranks from the function "report_cards", get the observation groups
-    df: dataframe with the Gurobi estimates
-    Return observation groups
-    """
-
-    ## get groups
-    df_aux = df[df['E_ij'] == 1]
-
-    # generate adjacency matrix
-    sim_mat = pd.crosstab(df_aux.i, df_aux.j)
-
-    sim_mat2 = sim_mat.to_numpy()
-    n_components, labels = connected_components(sim_mat2, directed=False)
-
-    # mapping from observations to groups
-    obs_groups = pd.DataFrame({"obs_idx": sim_mat.keys(),
-                                "groups": labels})
-
-    # test for violation of transitivity
-    print(">> Test for violation of transitivity")
-    if len(labels)==1:
-        assert len(df)==len(df_aux)
-    else:
-        for l in np.unique(labels):
-            f_in_gr = obs_groups["obs_idx"][obs_groups['groups'] == l].to_numpy()
-            df_l = df[(df['i'].isin(f_in_gr)) & (df['j'].isin(f_in_gr))]
-
-            #print(len(df_l))
-            assert len(df_l) == len(df_l[df_l['E_ij']==1])
-
-    print("%%%%%%%%%%%%%%%%%%%%%%%%%")
-    print("Number of groups: {}".format(len(np.unique(labels))), flush=True)
-    print("%%%%%%%%%%%%%%%%%%%%%%%%%")
-
-    ## bubble sort
-    sorted_labels = np.unique(labels)
-
-    swapped = True
-    while swapped:
-        swapped = False
-        for i in range(len(sorted_labels) - 1):
-            i_lab = sorted_labels[i]
-            i_1_lab = sorted_labels[i + 1]
-
-            # who is bigger?
-            f_in_gr = obs_groups["obs_idx"][obs_groups['groups'] == i_lab].to_numpy()
-            f_in_gr_1 = obs_groups["obs_idx"][obs_groups['groups'] == i_1_lab].to_numpy()
-
-            df_aux = df[(df['j'].isin(f_in_gr)) & (df['i'].isin(f_in_gr_1))]
-            dij = df_aux['D_ij'].max()
-            dji = df_aux['D_ji'].max()
-
-            if len(df_aux) == 0:
-                df_aux = df[(df['i'].isin(f_in_gr)) & (df['j'].isin(f_in_gr_1))]
-                dij = df_aux['D_ij'].max()
-                dji = df_aux['D_ji'].max()
-
-                condition = dij < dji
-                # check we don't have violation of transitivity
-                if dij == dji:
-                    raise AssertionError("Violation of transitivity")
-            else:
-                condition = dji < dij
-                # check we don't have violation of transitivity
-                if dij == dji:
-                    raise AssertionError("Violation of transitivity")
-
-            if condition:
-                sorted_labels[i], sorted_labels[i + 1] = sorted_labels[i + 1], sorted_labels[i]
-                swapped = True
-
-    print(">> Finished bubble sort!")
-    new_vals = {sorted_labels[i]: i for i in range(len(sorted_labels))}
-    obs_groups['groups'] = obs_groups['groups'].replace(new_vals) + 1
-
-    return obs_groups
-
 
 ## function to fit the ranking model ##
 def fit(Pij, lamb, DR = None, save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):

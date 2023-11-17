@@ -3,7 +3,7 @@
 ##########################################################
 import gurobipy as gp
 
-def tau(i_j, Pij, Dij, Eij):
+def tau(i_j, Pij, Dij):
     """
     Computed expected tau
     Parameters:
@@ -13,12 +13,12 @@ def tau(i_j, Pij, Dij, Eij):
     Eij: Pairwise indicators
     """
     return gp.quicksum(
-                Pij[a]*Dij[a] + Pij[(a[1],a[0])]*(1 - Eij[a] - Dij[a])
-                - Pij[a]*(1 - Eij[a] - Dij[a]) - Pij[(a[1],a[0])]*Dij[a]
+                Pij[a]*Dij[a] + Pij[(a[1],a[0])]*Dij[(a[1],a[0])]
+                - Pij[a]*Dij[(a[1],a[0])] - Pij[(a[1],a[0])]*Dij[a]
                             for a in i_j)
 
 
-def dp(i_j, Pij, Dij, Eij):
+def dp(i_j, Pij, Dij):
     """
     Computed expected discordance proportion
     Parameters:
@@ -29,7 +29,7 @@ def dp(i_j, Pij, Dij, Eij):
     """
     # Set objective function
     return gp.quicksum(  
-                        Pij[a]*(1 - Eij[a] - Dij[a]) + Pij[(a[1],a[0])]*Dij[a]
+                        Pij[a]*Dij[(a[1],a[0])] + Pij[(a[1],a[0])]*Dij[a]
                                 for a in i_j)
 
 
