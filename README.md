@@ -146,7 +146,6 @@ First, one can supply a parameter $\lambda \in [0,1]$, which corresponds to the 
 
 ```python
 from drrank import fit
-from simul_pij import simul_data
 
 # Fit the report card function
 results = fit(pis, lamb = 0.25, DR = None)
