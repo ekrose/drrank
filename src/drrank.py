@@ -171,7 +171,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         df['obs_idx'] = df.i_j.apply(lambda x: x[0])
         df_groups = df.groupby('obs_idx').D_ij.sum().to_frame()
         df_groups['groups'] = firm_groups.D_ij.rank(
-                method='dense', ascending=False)
+                method='dense', ascending=False) + 1
 
         if lamb is not None:
             df_groups.rename(columns={'groups': 'grades_lamb{}'.format(lamb)}, inplace=True)
