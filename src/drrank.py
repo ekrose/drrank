@@ -256,7 +256,7 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
     return final_df
 
 
-def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None, trans=False):
+def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plot=True, save_path=None, trans=False, ylabel_fontsize=8):
     """
     Function to plot an histogram of the estimates
     Arguments:
@@ -315,9 +315,9 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     plt.grid(axis='y', alpha=0.35, linewidth=0.3)
     plt.legend(mean_lines, labels, loc='lower right', markerscale=1)
     if ylabels != None:
-        plt.yticks(y_range, df_plot[ylabels], fontsize=6)    
+        plt.yticks(y_range, df_plot[ylabels], fontsize=ylabel_fontsize)    
     else:
-        plt.yticks(y_range, df_plot['obs_idx'], fontsize=6)    
+        plt.yticks(y_range, df_plot['obs_idx'], fontsize=ylabel_fontsize)    
 
     ax1.set_xlabel('Posterior means')
     ax1.spines['right'].set_visible(False)
