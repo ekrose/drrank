@@ -75,4 +75,4 @@ from drrank import fig_ranks
 
 # Merge the results with the identity of our observations
 results['firstname'] = data.firstname
-fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')
+fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', ylabel_fontsize = 8, save_path = 'example/name_ranking.jpg')
