@@ -186,7 +186,7 @@ from drrank import fig_ranks
 
 # Merge the results with the identity of our observations
 results['firstname'] = data.firstname
-fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', save_path = 'example/name_ranking.jpg')
+fig_ranks(ranking = results, posterior_features = G.posterior_df, ylabels = 'firstname', ylabel_fontsize = 8, save_path = 'example/name_ranking.jpg')
 ```
 
 ![name_ranking](https://github.com/ekrose/drrank/blob/main/example/name_ranking.jpg?raw=true)
@@ -195,5 +195,6 @@ Within the function you can specify the following arguments:
 - *results*: ranking results from *drrank.fit*
 - *posterior_features*: posterior features computed through *G.compute_posteriors()*
 - *ylabels*: optional, specify the column in *results* where we have stored the labels of each observation (default = `None`)
+- *ylabel_fontsize*: optional, specify font size for labels (default = 8)
 - *show_plot*: whether to show the plot or not (default = `True`)
 - *save_path*: path to where the plot will be saved; `None` implies the graph will not be saved (default = `None`) 
