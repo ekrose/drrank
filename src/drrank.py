@@ -102,6 +102,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         model.setObjective(loss, GRB.MINIMIZE)
 
         # Add constraints        
+        n_firms = max(i_j)[0] + 1
         model.addConstrs(
             (Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1
                 for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
@@ -169,16 +170,18 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         # Get groups
         print("Getting the implied groups...")
         df['obs_idx'] = df.i_j.apply(lambda x: x[0])
-        df_groups = df.groupby('obs_idx').D_ij.sum().to_frame()
-        df_groups['groups'] = firm_groups.D_ij.rank(
-                method='dense', ascending=False) + 1
+        df_groups = df.groupby('obs_idx').D_ij.sum().to_frame().reset_index()
+        df_groups['groups'] = df_groups.D_ij.rank(
+                method='dense', ascending=False)
 
         if lamb is not None:
             df_groups.rename(columns={'groups': 'grades_lamb{}'.format(lamb)}, inplace=True)
         elif DR is not None:
             df_groups.rename(columns={'groups': 'grades_DR{}'.format(DR)}, inplace=True)
 
-        return df_groups
+        print("Solution yields {} total groups".format(df_groups.groups.nunique()))
+
+        return df_groups.drop('D_ij',axis=1)
     
 
 ## function to fit the ranking model ##
