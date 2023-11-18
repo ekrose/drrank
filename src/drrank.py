@@ -11,6 +11,8 @@ import multiprocessing
 from multiprocessing.pool import ThreadPool
 import matplotlib.pyplot as plt
 from drrank_loss import dp, tau
+import tqdm
+import time
 
 ## function to clean the Pij matrix ##
 def clean_data(pi):
@@ -70,6 +72,9 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
     IntFeasTol: Integer feasibility Tollerance, Gurobi parameter (default = 1e-9)
     OptimalityTol: Optimality Tollerance, Gurobi parameter (default = 1e-9)
     """
+    # Time execution
+    start = time.time()
+
     # Check that lambda and DR are correctly specified
     if (lamb is not None) & (DR is not None) :
         raise AssertionError("Must supply either lambda or DR, but not both.")
@@ -102,27 +107,16 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         model.setObjective(loss, GRB.MINIMIZE)
 
         # Add constraints        
+        print("Building constraints...")
         n_firms = max(i_j)[0] + 1
-        model.addConstrs(
-            (Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1
-                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
-            name="SST1")
-
-        model.addConstrs(
-            (Dij[(i, k)] - Dij[(i, j)] - Dij[(j, k)] <= 0
-                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
-            name="SST2")
-
-        model.addConstrs(
-            (Dij[(i, k)] + Dij[(k, i)] - Dij[(i, j)] - Dij[(j, i)] -  Dij[(j, k)] -  Dij[(k, j)] <= 0
-                for k in range(1, n_firms) for j in range(1, n_firms) for i in range(1, n_firms)),
-            name="SST3")
-
-        model.addConstrs(
-            (Dij[(i, j)] + Dij[(j, i)] <= 1
-                for j in range(1, n_firms) for i in range(1, n_firms)),
-            name="SST4")
-
+        for i in tqdm.tqdm(range(1, n_firms)):
+            for j in range(1, n_firms):
+                model.addConstr(Dij[(i, j)] + Dij[(j, i)] <= 1)
+                for k in range(1, n_firms):
+                    model.addConstr(Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1)
+                    model.addConstr(Dij[(i, k)] - Dij[(i, j)] - Dij[(j, k)] <= 0)
+                    model.addConstr(Dij[(i, k)] + Dij[(k, i)] - Dij[(i, j)]
+                                        - Dij[(j, i)] -  Dij[(j, k)] -  Dij[(k, j)] <= 0)
         model.update()
 
         # DR constraint, if necessary
@@ -174,13 +168,14 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         df_groups['groups'] = df_groups.D_ij.rank(
                 method='dense', ascending=False)
 
+        print("Solution yields {} total groups".format(df_groups.groups.nunique()))
+
         if lamb is not None:
             df_groups.rename(columns={'groups': 'grades_lamb{}'.format(lamb)}, inplace=True)
         elif DR is not None:
             df_groups.rename(columns={'groups': 'grades_DR{}'.format(DR)}, inplace=True)
 
-        print("Solution yields {} total groups".format(df_groups.groups.nunique()))
-
+        print("Time elapased solving LP problem: {:4.3f} minutes".format((time.time()-start)/60))
         return df_groups.drop('D_ij',axis=1)
     
 
