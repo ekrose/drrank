@@ -57,7 +57,7 @@ def clean_data(pi):
     return i_j, Pij
 
 ## main function ##
-def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', add_cond=True, FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
     """
     Compute the report cards via Gurobi optimization
     Parameters:
@@ -104,6 +104,8 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         else:
             raise AssertionError("Must supply either lambda or DR.")
 
+        loss_condorcet = -tau(i_j, Pij, Dij)
+
         model.setObjective(loss, GRB.MINIMIZE)
 
         # Add constraints        
@@ -122,7 +124,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         # DR constraint, if necessary
         if DR is not None:
             npairs = np.sum(Pij.values())
-            model.addConstr(dp(i_j, Pij, Dij) <= DR*npairs)
+            dr_constr = model.addConstr(dp(i_j, Pij, Dij) <= DR*npairs)
         model.update()
 
         # First optimize() if call fails - need to set NonConvex to 2
@@ -175,7 +177,28 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         elif DR is not None:
             df_groups.rename(columns={'groups': 'grades_DR{}'.format(DR)}, inplace=True)
 
-        print("Time elapased solving LP problem: {:4.3f} minutes".format((time.time()-start)/60))
+        ## Add condorcet solution
+        if add_cond:
+            print("Adding condorcet solution")
+            model.setObjective(loss_condorcet, GRB.MINIMIZE)
+            if DR is not None:
+                model.remove(dr_constr)
+            model.update()
+            model.optimize()
+
+            D_ij_hat = model.getAttr('x', Dij)
+
+            data_items = D_ij_hat.items()
+            data_list = list(data_items)
+            df = pd.DataFrame(data_list, columns=['i_j', 'D_ij'])
+            df['obs_idx'] = df.i_j.apply(lambda x: x[0])
+            cond_groups = df.groupby('obs_idx').D_ij.sum().to_frame().reset_index()
+            cond_groups['condorcet_rank'] = cond_groups.D_ij.rank(
+                    method='dense', ascending=False)
+
+            df_groups = df_groups.merge(cond_groups.drop('D_ij', axis=1), how='left', on='obs_idx')
+
+        print("Time elapased solving LP problem(s): {:4.3f} minutes".format((time.time()-start)/60))
         return df_groups.drop('D_ij',axis=1)
     
 
@@ -200,10 +223,6 @@ def fit(Pij, lamb, DR = None, save_controls = False, save_dir = "dump", save_nam
 
     # Produce the report cards
     res_df = report_cards(i_j, Pij, lamb, DR, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
-
-    # Compute condorcet ranks
-    condorcet = report_cards(i_j, Pij, 1, None, save_controls = False, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
-    res_df['condorcet_rank'] = condorcet['grades_lamb1']
 
     return res_df
 
@@ -240,7 +259,7 @@ def fit_multiple(Pij, lamb_list, ncores = 1, save_controls = False, save_dir = "
         Helper function to run report_cards within a multiprocessing tool
         x: lambda value over which we iterate
         """
-        return report_cards(i_j, Pij, x, DR = None, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
+        return report_cards(i_j, Pij, x, DR = None, add_cond=False, save_controls = save_controls, save_dir = save_dir, save_name = save_name, FeasibilityTol = FeasibilityTol, IntFeasTol = IntFeasTol, OptimalityTol = OptimalityTol)
 
     # Compute using multiprocessing to speed up everything
     print("Computing grades with {} cores".format(ncores), flush=True)
