@@ -168,7 +168,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         df['obs_idx'] = df.i_j.apply(lambda x: x[0])
         df_groups = df.groupby('obs_idx').D_ij.sum().to_frame().reset_index()
         df_groups['groups'] = df_groups.D_ij.rank(
-                method='dense', ascending=False)
+                method='dense', ascending=False).astype(int)
 
         print("Solution yields {} total groups".format(df_groups.groups.nunique()))
 
@@ -194,7 +194,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
             df['obs_idx'] = df.i_j.apply(lambda x: x[0])
             cond_groups = df.groupby('obs_idx').D_ij.sum().to_frame().reset_index()
             cond_groups['condorcet_rank'] = cond_groups.D_ij.rank(
-                    method='dense', ascending=False)
+                    method='dense', ascending=False).astype(int)
 
             df_groups = df_groups.merge(cond_groups.drop('D_ij', axis=1), how='left', on='obs_idx')
 
