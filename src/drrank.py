@@ -111,14 +111,13 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         model.update()
 
         # Objective
+        loss_condorcet = -tau(i_j, Pij, Dij)
         if lamb is not None:
             loss = (1-lamb)*dp(i_j, Pij, Dij) - lamb*tau(i_j, Pij, Dij)
         elif DR is not None:
-            loss = -tau(i_j, Pij, Dij)
+            loss = loss_condorcet
         else:
             raise AssertionError("Must supply either lambda or DR.")
-
-        loss_condorcet = -tau(i_j, Pij, Dij)
 
         # warmstart at lambda=1
         if warmstart:
