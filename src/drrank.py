@@ -57,7 +57,7 @@ def clean_data(pi):
     return i_j, Pij
 
 ## main function ##
-def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', add_cond=True, FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
+def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_controls = False, save_dir = "dump", save_name = '_debug', warmstart = True, add_cond = True, FeasibilityTol = 1e-9, IntFeasTol = 1e-9, OptimalityTol = 1e-9):
     """
     Compute the report cards via Gurobi optimization
     Parameters:
@@ -87,7 +87,7 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
 
     # the model
     with gp.Env() as env, gp.Model(env=env) as model:
-        n_obs = max(i_j)[0] + 1
+        n_firms = max(i_j)[0] + 1
 
         # Tolearances
         model.Params.FeasibilityTol = FeasibilityTol
@@ -96,7 +96,21 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         
         # control variables
         Dij = model.addVars(i_j, vtype=GRB.BINARY, name="Dij")
+        grades = model.addVars(list(range(1,n_firms)),
+                lb=1, ub=n_firms-1,
+                vtype=GRB.INTEGER, name="grades")
 
+        # Add constraints        
+        print("Building constraints...")
+        for i in tqdm.tqdm(range(1, n_firms)):
+            for j in range(1, n_firms):
+                model.addConstr((Dij[(i,j)] == 1) >>
+                    (grades[i] - grades[j] >= 1))
+                model.addConstr((Dij[(i,j)] == 0) >>
+                    (grades[j] - grades[i] >= 0))
+        model.update()
+
+        # Objective
         if lamb is not None:
             loss = (1-lamb)*dp(i_j, Pij, Dij) - lamb*tau(i_j, Pij, Dij)
         elif DR is not None:
@@ -106,19 +120,15 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
 
         loss_condorcet = -tau(i_j, Pij, Dij)
 
-        model.setObjective(loss, GRB.MINIMIZE)
+        # warmstart at lambda=1
+        if warmstart:
+            print("Warm starting at lambda = 1")
+            model.setObjective(loss_condorcet, GRB.MINIMIZE)
+            model.update()
+            model.optimize()
+            D_ij_hat_cond = model.getAttr('x', Dij)
 
-        # Add constraints        
-        print("Building constraints...")
-        n_firms = max(i_j)[0] + 1
-        for i in tqdm.tqdm(range(1, n_firms)):
-            for j in range(1, n_firms):
-                model.addConstr(Dij[(i, j)] + Dij[(j, i)] <= 1)
-                for k in range(1, n_firms):
-                    model.addConstr(Dij[(i, j)] + Dij[(j, k)] - Dij[(i, k)] <= 1)
-                    model.addConstr(Dij[(i, k)] - Dij[(i, j)] - Dij[(j, k)] <= 0)
-                    model.addConstr(Dij[(i, k)] + Dij[(k, i)] - Dij[(i, j)]
-                                        - Dij[(j, i)] -  Dij[(j, k)] -  Dij[(k, j)] <= 0)
+        model.setObjective(loss, GRB.MINIMIZE)
         model.update()
 
         # DR constraint, if necessary
@@ -180,15 +190,15 @@ def report_cards(i_j, Pij, lamb = None, DR = None, loss = 'binary', save_control
         ## Add condorcet solution
         if add_cond:
             print("Adding condorcet solution")
-            model.setObjective(loss_condorcet, GRB.MINIMIZE)
-            if DR is not None:
-                model.remove(dr_constr)
-            model.update()
-            model.optimize()
+            if not warmstart:
+                model.setObjective(loss_condorcet, GRB.MINIMIZE)
+                if DR is not None:
+                    model.remove(dr_constr)
+                model.update()
+                model.optimize()
+                D_ij_hat_cond = model.getAttr('x', Dij)
 
-            D_ij_hat = model.getAttr('x', Dij)
-
-            data_items = D_ij_hat.items()
+            data_items = D_ij_hat_cond.items()
             data_list = list(data_items)
             df = pd.DataFrame(data_list, columns=['i_j', 'D_ij'])
             df['obs_idx'] = df.i_j.apply(lambda x: x[0])
