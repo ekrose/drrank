@@ -48,6 +48,7 @@ While **DRrank** provides the functionality to account for any variance-stabiliz
 To estimate the prior, generate an instance of the `prior_estimate` class with each unit's estimated latent attribute, $\hat{\theta}_i$, and its associated standard errors. You also have the option of supplying an inverse transform in case the $\hat{\theta}_i$ have been transformed to stabilize variances. The appropriate inverse transform for the ranking name-specific contact rates in Kline, Rose, and Walters (2023), for example, is $f(x) = sin(x)^2$. The inverse transform function should be vectorized.
 
 ```python
+import numpy as np
 from drrank_distribution import prior_estimate
 thetas = data.thetas.values # set of estimates
 s = data.s.values # setstandard errors
