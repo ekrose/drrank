@@ -23,6 +23,7 @@ To illustrate the package's features, this readme uses the data in *example/name
 
 ```python
 import pandas as pd
+import os
 
 # Read in the data
 data = pd.read_csv(os.getcwd() + '/example/name_example.csv')
@@ -168,7 +169,7 @@ import numpy as np
 from drrank import fit_multiple
 
 # Try different values of Lambda
-results_l = fit_multiple(p_ij, np.arange(0, 0.9, 0.01))
+results_l = fit_multiple(pis, np.arange(0, 0.9, 0.01))
 ```
 
 Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s $\tau$, a measure of the rank correlation between units' latent rankings and assigned grades, subject to a constraint on the expected share of pairwise units incorrectly classified, which we refer to as the Discordance Rate (DR).
@@ -176,7 +177,7 @@ Second, one can ask **DRrank** to compute grades that maximize Kendall (1938)'s 
 ```python
 
 # Fit the report card function
-results_dr = fit(p_ij, lamb = None, DR = 0.05)
+results_dr = fit(pis, lamb = None, DR = 0.05)
 ```
 
 Finally, we provide functionality to plot grades along with posterior means and credible intervals:

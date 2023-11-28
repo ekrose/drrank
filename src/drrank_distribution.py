@@ -124,7 +124,7 @@ class prior_estimate():
 
         # Tune G to match mean and SD
         rng = np.random.default_rng(seed=seed)
-        alpha_0 = rng.standard_normal((self.spline_order, 1)) 
+        alpha_0 = rng.standard_normal(self.spline_order) 
 
         # Setup the solver options
         options_fmin = {

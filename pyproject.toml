@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "drrank"
-version = "0.1.0"
+version = "0.1.1"
 authors = [
   { name="Evan K. Rose", email="ekrose@gmail.com" },
 ]
