@@ -180,7 +180,7 @@ class prior_estimate():
         # Save the estimates
         self.prior_g = {'mean_theta': mean_theta, 'sd_theta': sd_theta, 'g_theta': g_theta}
 
-    def plot_estimates(self, g_theta=None, show_plot=True, save_path=None):
+    def plot_estimates(self, g_theta=None, show_plot=True, save_path=None, **kwargs):
         """
         Function to plot an histogram of the estimates
         Arguments:
@@ -213,12 +213,10 @@ class prior_estimate():
 
         # Plot the distribution
         fig, ax = plt.subplots(figsize=(15, 10))
-        sns.histplot(data = thetas, 
-                    line_kws = {'alpha': 0.6}, kde = False,
-                    binwidth = 0.0025,
+        sns.histplot(data = thetas, kde = False,  
                     stat = 'probability',
-                    fill = True,
-                    alpha = 0.3, common_norm = False, ax = ax)
+                    common_norm = False, ax = ax,
+                    **kwargs)
         sns.lineplot(x = support, y = g_theta, color = 'red')
         sns.despine()
         plt.ylabel('Scaled density / mass', fontsize = 25)

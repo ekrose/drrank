@@ -36,7 +36,11 @@ G.prior_g['sd_theta']
 G.prior_g['g_theta']
 
 # Plot the estimated prior distribution
-G.plot_estimates(save_path = "example/prior_distribution.jpg")
+G.plot_estimates(save_path = "example/prior_distribution.jpg", 
+                    binwidth = 0.0030,
+                    line_kws = {'alpha': 0.6},
+                    fill = True,
+                    alpha = 0.3)
 
 # 2. Posterior features and Pairwise probabilities --------------------------------
 

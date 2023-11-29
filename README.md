@@ -85,7 +85,11 @@ You can then graph the results by calling the following function:
 ```python
 
 # Plot the estimated prior distribution
-G.plot_estimates(save_path = "example/prior_distribution.jpg")
+G.plot_estimates(save_path = "example/prior_distribution.jpg", 
+                    binwidth = 0.0030,
+                    line_kws = {'alpha': 0.6},
+                    fill = True,
+                    alpha = 0.3)
 ```
 
 ![prior_distribution](https://github.com/ekrose/drrank/blob/main/example/prior_distribution.jpg?raw=true)
@@ -94,6 +98,8 @@ Within the function you can specify the following arguments:
 - *g_theta*: provide your own prior distribution G. `None` implies the function will utilize the estimated G from the *estimate_prior()* method (default = `None`).
 - *show_plot*: whether to show the plot or not (default = `True`).
 - *save_path*: path to where the plot will be saved. `None` implies the graph will not be saved (default = `None`).
+
+You can also furtherly change the visualization of the histogram, which inherits all the arguments from [`seaborn.histplot`](https://seaborn.pydata.org/generated/seaborn.histplot.html)
 
 ### 3. Estimation of posterior features and $P$ matrix
 
