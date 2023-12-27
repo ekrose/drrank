@@ -306,7 +306,7 @@ def fig_ranks(ranking, posterior_features, gradecol=None, ylabels=None, show_plo
     df_plot = pd.concat([ranking, posterior_features], axis = 1)
 
     # Sort everything
-    df_plot = df_plot.sort_values([group, "condorcet_rank"], ascending=False)
+    df_plot = df_plot.sort_values("condorcet_rank", ascending=False)
 
     # Get upper and lower bounds
     if trans:
